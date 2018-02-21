@@ -1,0 +1,15 @@
+[package]
+name = "garage_rfid"
+version = "0.1.0"
+authors = ["olson3r <scootles.olson@gmail.com>"]
+
+[features]
+default = ["tokio"]
+# default = []
+tokio = ["sysfs_gpio/tokio"]
+
+[dependencies]
+mio = "0.6"
+futures = "0.1"
+tokio-core = "0.1"
+sysfs_gpio = "0.5"
