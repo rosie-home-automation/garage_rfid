@@ -21,17 +21,17 @@ impl From<std::io::Error> for StreamError {
 fn stream() -> StreamResult {
   const scale: u64 = 100;
   let mut core = Core::new()?;
-  let (tx_master, rx) = mpsc::channel(50);
+  let (tx_master, mut rx) = mpsc::channel(50);
   let t1_tx = tx_master.clone();
   let t2_tx = tx_master.clone();
-  let t1 = thread::spawn(move || {
+  core.handle().spawn(|_| {
     let durs = [0, scale, scale, 5 * scale];
     loop {
       for &dur in durs.iter() {
         thread::sleep(time::Duration::from_millis(dur));
-        println!("Sending 0");
+        println!("Tx 0");
         t1_tx.clone()
-          .send(0)
+          .send(Ok(0))
           .then(|tx|
             match tx {
               Ok(_tx) => {
@@ -49,14 +49,14 @@ fn stream() -> StreamResult {
       thread::sleep(time::Duration::from_millis(3000));
     }
   });
-  let t2 = thread::spawn(move || {
+  core.handle().spawn(|_| {
     let durs = [3 * scale, scale, scale, scale];
     loop {
       for &dur in durs.iter() {
         thread::sleep(time::Duration::from_millis(dur));
-        println!("Sending 1");
+        println!("Tx 1");
         t2_tx.clone()
-          .send(1)
+          .send(Ok(1))
           .then(|tx|
             match tx {
               Ok(_tx) => {
@@ -73,15 +73,21 @@ fn stream() -> StreamResult {
       }
       thread::sleep(time::Duration::from_millis(3000 + scale));
     }
+    Ok(())
   });
 
-  // let r2 = rx.for_each(|value| {
-  //   println!("Rx{:?}", value);
-  // });
+  // loop {
+  //   match rx.poll() {
+  //     value => println!("Rx {:?}", value)
+  //   }
+  // }
 
-  // core.run(r2).unwrap();
-  t1.join();
-  t2.join();
+  let r2 = rx.for_each(|value| {
+    println!("Rx {:?}", value);
+  });
+  core.run(r2).unwrap();
+  // t1.join();
+  // t2.join();
   Ok(())
 }
 
