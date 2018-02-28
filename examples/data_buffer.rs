@@ -6,8 +6,8 @@
 
 use std::thread;
 use std::sync::mpsc;
-use std::sync::mpsc::{Sender, Receiver, RecvTimeoutError};
-use std::time::Duration;
+use std::sync::mpsc::{ Sender, Receiver, RecvTimeoutError };
+use std::time::{ Duration, Instant };
 
 use std::collections::HashMap;
 
@@ -44,6 +44,7 @@ impl<'a> KeyMapper<'a> {
 struct RfidReader<'a> {
   rx: Receiver<u8>,
   bit_buffer: Vec<u8>,
+  pin_key_buffer_last_add_dt: Instant,
   pin_key_buffer: Vec<&'a str>,
   key_mapper: KeyMapper<'a>
 }
