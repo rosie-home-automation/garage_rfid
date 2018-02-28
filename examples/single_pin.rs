@@ -1,3 +1,9 @@
+/**
+ * An example of synchronously/blockingly polling a single pin. Used to determine if the library
+ * worked on the raspberry pi and was nice to use.
+ * It requires a raspberry pi.
+ */
+
 extern crate sysfs_gpio;
 
 use sysfs_gpio::{Direction, Edge, Pin};

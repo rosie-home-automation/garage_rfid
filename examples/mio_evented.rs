@@ -1,3 +1,9 @@
+/**
+ * An example to workout how to use async pin pollers through mio evented.
+ * Also learned how to use features with cargo.
+ * This example requires a raspberry pi.
+ */
+
 #[cfg(feature = "mio-evented")]
 extern crate mio;
 #[cfg(feature = "mio-evented")]

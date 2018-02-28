@@ -1,3 +1,10 @@
+/**
+ * An example of an early attempt at using Tokio to collect values from 2 producers.
+ * Never finished it, possibly didn't keep a reference alive for long enough.
+ * This example is not finished.
+ * This example doesn't require a raspberry pi.
+ */
+
 extern crate futures;
 extern crate tokio_core;
 

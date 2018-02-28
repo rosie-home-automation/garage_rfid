@@ -1,3 +1,9 @@
+/**
+ * An example that helped me figure out an issue I was having with the mio_evented example.
+ * I needed to keep some variables around longer to extend their lifetime.
+ * This example requires a raspberry pi.
+ */
+
 #[cfg(feature = "mio-evented")]
 extern crate mio;
 #[cfg(feature = "mio-evented")]
