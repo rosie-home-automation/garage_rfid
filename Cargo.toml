@@ -4,8 +4,9 @@ version = "0.1.0"
 authors = ["olson3r <scootles.olson@gmail.com>"]
 
 [features]
-default = ["tokio"]
+default = ["mio-evented"]
 # default = []
+mio-evented = ["sysfs_gpio/mio-evented"]
 tokio = ["sysfs_gpio/tokio"]
 
 [dependencies]
