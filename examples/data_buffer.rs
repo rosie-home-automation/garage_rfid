@@ -11,6 +11,10 @@ use std::time::{ Duration, Instant };
 
 use std::collections::HashMap;
 
+const RFID_WAIT_TIMEOUT_MS: u64 = 1000;
+const RFID_READ_TIMEOUT_MS: u64 = 120;
+const PIN_KEY_BUFFER_STALE_TIMEOUT_SEC: u64 = 15;
+
 struct KeyMapper<'a> {
   mapping: HashMap<&'a str, &'a str>
 }
