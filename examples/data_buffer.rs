@@ -214,6 +214,25 @@ fn buffer() -> Result<(), std::sync::mpsc::SendError<u8>> {
   tx.send(1)?;
   tx.send(0)?;
   tx.send(0)?;
+
+  thread::sleep(Duration::from_millis(700));
+  // RFID - 1010101010101010
+  tx.send(1)?;
+  tx.send(0)?;
+  tx.send(1)?;
+  tx.send(0)?;
+  tx.send(1)?;
+  tx.send(0)?;
+  tx.send(1)?;
+  tx.send(0)?;
+  tx.send(1)?;
+  tx.send(0)?;
+  tx.send(1)?;
+  tx.send(0)?;
+  tx.send(1)?;
+  tx.send(0)?;
+  tx.send(1)?;
+  tx.send(0)?;
   // drop(tx);
 
   data_thread.join().unwrap();
