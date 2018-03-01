@@ -4,12 +4,13 @@ extern crate mio;
 extern crate sysfs_gpio;
 
 #[cfg(feature = "mio-evented")]
-use mio::{Events, Poll, PollOpt, Ready, Token};
+mod rfid_reader;
 #[cfg(feature = "mio-evented")]
-use sysfs_gpio::{AsyncPinPoller, Direction, Edge, Pin};
-use std::thread;
-use std::time::Duration;
+mod key_mapper;
+#[cfg(feature = "mio-evented")]
+mod rfid_buffer;
 
+/*
 #[derive(Debug)]
 enum StreamError {
   Io(std::io::Error),
@@ -67,13 +68,17 @@ fn stream() -> StreamResult {
     }
   }
 }
+*/
+
+#[cfg(feature = "mio-evented")]
+fn rfid_reader() {
+  let mut reader = rfid_reader::RfidReader::new();
+  reader.start();
+}
 
 #[cfg(feature = "mio-evented")]
 fn main() {
-  match stream() {
-    Ok(()) => println!("Stream complete"),
-    Err(err) => println!("Error: {:?}", err),
-  }
+  rfid_reader();
 }
 
 #[cfg(not(feature = "mio-evented"))]
