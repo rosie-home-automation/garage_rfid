@@ -1,0 +1,19 @@
+[database]
+url = ""
+
+[rfid_reader]
+# data_0_gpio = 18 # For the PCB
+data_0_gpio = 17 # Using for testing currently
+# data_1_gpio = 23 # For the PCB
+data_1_gpio = 27 # Using for testing currently
+green_led_gpio = 24
+red_led_gpio = 25
+wait_timeout_ms = 1000
+read_timeout_ms = 120
+pin_key_timeout_secs = 15
+
+[garage_door]
+opener_gpio = 4
+sensor_gpio = 5
+open_led_gpio = 27
+closed_led_gpio = 22
