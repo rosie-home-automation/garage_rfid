@@ -4,13 +4,16 @@ version = "0.1.0"
 authors = ["olson3r <scootles.olson@gmail.com>"]
 
 [features]
-default = ["mio-evented"]
-# default = []
-mio-evented = ["sysfs_gpio/mio-evented"]
-tokio = ["sysfs_gpio/tokio"]
+default = []
+# default = ["mio-evented"]
+# mio-evented = ["sysfs_gpio/mio-evented"]
+# tokio = ["sysfs_gpio/tokio"]
 
 [dependencies]
+config = "0.8"
+error-chain = "0.11.0"
+diesel = { version = "1.1.1", features = ["sqlite"] }
 mio = "0.6"
-futures = "0.1"
-tokio-core = "0.1"
-sysfs_gpio = "0.5"
+serde = "1.0.27"
+serde_derive = "1.0.27"
+sysfs_gpio = { version = "0.5", features = ["mio-evented"] }

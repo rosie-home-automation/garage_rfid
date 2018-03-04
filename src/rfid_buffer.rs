@@ -1,34 +1,42 @@
-use std::thread;
-use std::sync::mpsc;
-use std::sync::mpsc::{ Sender, Receiver, RecvTimeoutError };
+use std::sync::mpsc::{ Receiver, RecvTimeoutError };
 use std::time::{ Duration, Instant };
 
 use key_mapper::KeyMapper;
-
-const RFID_WAIT_TIMEOUT_MS: u64 = 1000;
-const RFID_READ_TIMEOUT_MS: u64 = 120;
-const PIN_KEY_BUFFER_STALE_TIMEOUT_SEC: u64 = 15;
 
 pub struct RfidBuffer<'a> {
   rx: Receiver<u8>,
   bit_buffer: Vec<u8>,
   pin_key_buffer_last_add_dt: Instant,
   pin_key_buffer: Vec<&'a str>,
-  key_mapper: KeyMapper<'a>
+  key_mapper: KeyMapper<'a>,
+  wait_timeout: Duration,
+  read_timeout: Duration,
+  pin_key_timeout: Duration
 }
 
 impl<'a> RfidBuffer<'a> {
-  pub fn new(rx: Receiver<u8>) -> RfidBuffer<'a> {
+  pub fn new(
+    rx: Receiver<u8>,
+    wait_timeout_ms: usize,
+    read_timeout_ms: usize,
+    pin_key_timeout_secs: usize
+  ) -> RfidBuffer<'a> {
     let bit_buffer =  Vec::new();
     let pin_key_buffer = Vec::new();
     let pin_key_buffer_last_add_dt =  Instant::now();
     let key_mapper = KeyMapper::new();
+    let wait_timeout = Duration::from_millis(wait_timeout_ms as u64);
+    let read_timeout = Duration::from_millis(read_timeout_ms as u64);
+    let pin_key_timeout = Duration::from_secs(pin_key_timeout_secs as u64);
     RfidBuffer {
-      rx: rx,
-      bit_buffer: bit_buffer,
-      pin_key_buffer: pin_key_buffer,
-      pin_key_buffer_last_add_dt: pin_key_buffer_last_add_dt,
-      key_mapper: key_mapper
+      rx,
+      bit_buffer,
+      pin_key_buffer,
+      pin_key_buffer_last_add_dt,
+      key_mapper,
+      wait_timeout,
+      read_timeout,
+      pin_key_timeout
     }
   }
 
@@ -39,8 +47,7 @@ impl<'a> RfidBuffer<'a> {
   }
 
   fn wait_for_data(&mut self) {
-    let timeout = Duration::from_millis(RFID_WAIT_TIMEOUT_MS);
-    match self.rx.recv_timeout(timeout) {
+    match self.rx.recv_timeout(self.wait_timeout) {
       Ok(bit) => {
         self.add_bit(bit);
         self.read_data();
@@ -56,9 +63,8 @@ impl<'a> RfidBuffer<'a> {
   }
 
   fn read_data(&mut self) {
-    let timeout = Duration::from_millis(RFID_READ_TIMEOUT_MS);
     loop {
-      match self.rx.recv_timeout(timeout) {
+      match self.rx.recv_timeout(self.read_timeout) {
         Ok(bit) => self.add_bit(bit),
         Err(RecvTimeoutError::Timeout) => {
           println!("Buffer Timeout: trying to match {}", self.bits());
@@ -104,8 +110,7 @@ impl<'a> RfidBuffer<'a> {
 
   fn pin_key_buffer_is_stale(&self) -> bool {
     if self.pin_key_buffer.is_empty() { return false }
-    let timeout = Duration::from_secs(PIN_KEY_BUFFER_STALE_TIMEOUT_SEC);
-    self.pin_key_buffer_last_add_dt.elapsed() > timeout
+    self.pin_key_buffer_last_add_dt.elapsed() > self.pin_key_timeout
   }
 
   fn clear_bit_buffer(&mut self) {
