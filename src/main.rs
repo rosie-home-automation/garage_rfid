@@ -1,29 +1,27 @@
-#[cfg(feature = "mio-evented")]
+extern crate config;
+extern crate serde;
+
+#[macro_use]
+extern crate serde_derive;
+
+#[macro_use]
+extern crate error_chain;
+
 extern crate mio;
-#[cfg(feature = "mio-evented")]
 extern crate sysfs_gpio;
 
-#[cfg(feature = "mio-evented")]
-mod rfid_reader;
-#[cfg(feature = "mio-evented")]
+mod errors;
+mod configuration;
+mod great_manager;
 mod key_mapper;
-#[cfg(feature = "mio-evented")]
+mod rfid_reader;
 mod rfid_buffer;
 
-use rfid_reader::RfidReader;
+use great_manager::GreatManager;
 
-#[cfg(feature = "mio-evented")]
-fn rfid_reader() {
-  let mut reader = RfidReader::new();
-  reader.start();
-}
-
-#[cfg(feature = "mio-evented")]
 fn main() {
-  rfid_reader();
-}
-
-#[cfg(not(feature = "mio-evented"))]
-fn main() {
-  println!("This example requires the `mio-evented` feature to be enabled.");
+  match GreatManager::new() {
+    Ok(mut great_manager) => great_manager.start(),
+    Err(err) => println!("Error {:?}", err)
+  }
 }
