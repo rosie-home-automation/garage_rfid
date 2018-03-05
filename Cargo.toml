@@ -17,3 +17,7 @@ mio = "0.6"
 serde = "1.0.27"
 serde_derive = "1.0.27"
 sysfs_gpio = { version = "0.5", features = ["mio-evented"] }
+uuid = "0.6.1"
+
+[dev-dependencies]
+dotenv = "0.10.1"
