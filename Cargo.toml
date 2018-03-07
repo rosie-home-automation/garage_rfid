@@ -20,4 +20,5 @@ sysfs_gpio = { version = "0.5", features = ["mio-evented"] }
 uuid = "0.6.1"
 
 [dev-dependencies]
+cargo-watch = "6.0.0"
 dotenv = "0.10.1"
