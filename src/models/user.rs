@@ -2,32 +2,28 @@ use diesel;
 use diesel::prelude::*;
 use schema::users;
 
-#[derive(Debug, Queryable)]
-pub struct User {
-  id: i32,
-  name: String
-}
+no_arg_sql_function!(last_insert_rowid, diesel::sql_types::Integer);
 
-#[derive(Insertable)]
+#[derive(Debug, Insertable, Queryable)]
 #[table_name="users"]
-pub struct NewUser {
-  name: String
+pub struct User {
+  pub id: Option<i32>,
+  pub name: String
 }
 
 impl User {
-  pub fn new(name: String) -> NewUser {
-    NewUser { name: name }
+  pub fn new(name: String) -> User {
+    User { id: None, name: name }
   }
-}
 
-impl NewUser {
   pub fn save(&self, conn: &SqliteConnection) -> User {
-    let new_user_id = diesel::insert_into(users::table)
+    diesel::insert_into(users::table)
       .values(self)
       .execute(conn)
       .expect("Failed to create user.");
-    users::dsl::users.find(new_user_id as i32)
+    let id: i32 = diesel::select(last_insert_rowid).first(conn).expect("Expected last insert id.");
+    users::dsl::users.find(id)
       .first(conn)
-      .expect(&format!("Unable to find user with id {}", new_user_id))
+      .expect(&format!("Unable to find user with id {}", id))
   }
 }
