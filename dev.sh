@@ -4,7 +4,7 @@ run_watch()
 {
   if [ -z $1 ]; then
     echo "Watching main..."
-    cargo watch -x "build" -s "RUST_BACKTRACE=1 ./target/debug/garage_rfid"
+    cargo watch -x "build --bin garage_rfid" -s "RUST_BACKTRACE=1 ./target/debug/garage_rfid"
   else
     echo "Watching example $1..."
     cargo watch -x "build --example $1" -s "RUST_BACKTRACE=1 ./target/debug/examples/$1"
