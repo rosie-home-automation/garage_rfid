@@ -21,4 +21,5 @@ uuid = "0.6.1"
 
 [dev-dependencies]
 cargo-watch = "6.0.0"
+diesel_cli = "1.1.0"
 dotenv = "0.10.1"
