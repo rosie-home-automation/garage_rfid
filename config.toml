@@ -1,5 +1,5 @@
 [database]
-url = ""
+url = "garage_rfid.sqlite3"
 
 [rfid_reader]
 # data_0_gpio = 18 # For the PCB
