@@ -49,7 +49,7 @@ pub struct Credential {
 impl Credential {
   pub fn create(
     conn: &SqliteConnection,
-    user_id: String,
+    user_id: &str,
     name: String,
     variety: String,
     value: String,
@@ -58,7 +58,7 @@ impl Credential {
     let now = Utc::now().naive_utc();
     let new_credential = Credential {
       id: id,
-      user_id: user_id,
+      user_id: user_id.to_string(),
       name: name,
       variety: variety,
       value: value,
