@@ -19,14 +19,14 @@ fn establish_connection() -> SqliteConnection {
 }
 
 fn creat_user(connection: &SqliteConnection, name: String) -> User {
-  let new_user = User::create(connection, name);
-  println!("NEW USER {:?}", new_user);
-  new_user
+  User::create(connection, name)
 }
 
 fn create_credential(connection: &SqliteConnection, user: &User) -> Credential {
-
-  let new_credential = Credential::create()
+  let name = "Taco RFID".to_string();
+  let variety = "RFID".to_string();
+  let value = "101100101100".to_string();
+  Credential::create(connection, user.id, name, variety, value)
 }
 
 fn test1() {
