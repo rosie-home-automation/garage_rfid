@@ -8,4 +8,4 @@ CREATE TABLE credentials(
   updated_at DATETIME NOT NULL
 );
 CREATE INDEX idx_credentials_user_id ON credentials(user_id);
-CREATE INDEX idx_credentials_variety_value ON credentials(variety, value);
+CREATE UNIQUE INDEX udx_credentials_variety_value ON credentials(variety, value);
