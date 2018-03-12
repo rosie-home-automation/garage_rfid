@@ -22,16 +22,8 @@ impl GreatManager {
 
   pub fn start(&mut self) {
     self.rfid_reader.start();
-    self.create_user();
     loop {
       thread::sleep(Duration::from_millis(1000));
     }
-  }
-
-  fn create_user(&self) {
-    let conn = self.database.connection();
-    let new_user = User::new("Taco".to_string());
-    let user = new_user.save(&conn);
-    println!("New user {:?}", user);
   }
 }

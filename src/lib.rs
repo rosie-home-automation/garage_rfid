@@ -1,3 +1,4 @@
+extern crate chrono;
 extern crate config;
 #[macro_use]
 extern crate diesel;
@@ -8,6 +9,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate sysfs_gpio;
+extern crate uuid;
 
 pub mod errors;
 pub mod configuration;

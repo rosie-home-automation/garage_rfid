@@ -1,29 +1,28 @@
+use chrono::prelude::{NaiveDateTime, Utc};
 use diesel;
 use diesel::prelude::*;
+use uuid::Uuid;
+
 use schema::users;
 
-no_arg_sql_function!(last_insert_rowid, diesel::sql_types::Integer);
-
-#[derive(Debug, Insertable, Queryable)]
+#[derive(Debug, Identifiable, Insertable, Queryable)]
 #[table_name="users"]
 pub struct User {
-  pub id: Option<i32>,
-  pub name: String
+  pub id: String,
+  pub name: String,
+  pub created_at: NaiveDateTime,
+  pub updated_at: NaiveDateTime
 }
 
 impl User {
-  pub fn new(name: String) -> User {
-    User { id: None, name: name }
-  }
-
-  pub fn save(&self, conn: &SqliteConnection) -> User {
+  pub fn create(conn: &SqliteConnection, name: String) -> User {
+    let id = Uuid::new_v4().to_string();
+    let now = Utc::now().naive_utc();
+    let new_user = User { id: id, name: name, created_at: now, updated_at: now };
     diesel::insert_into(users::table)
-      .values(self)
+      .values(&new_user)
       .execute(conn)
       .expect("Failed to create user.");
-    let id: i32 = diesel::select(last_insert_rowid).first(conn).expect("Expected last insert id.");
-    users::dsl::users.find(id)
-      .first(conn)
-      .expect(&format!("Unable to find user with id {}", id))
+    new_user
   }
 }

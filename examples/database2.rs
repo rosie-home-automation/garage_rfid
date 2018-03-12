@@ -8,6 +8,7 @@ use dotenv::dotenv;
 use std::env;
 
 use garage_rfid::models::user::User;
+use garage_rfid::models::credential::Credential;
 
 fn establish_connection() -> SqliteConnection {
   dotenv().ok();
@@ -18,8 +19,14 @@ fn establish_connection() -> SqliteConnection {
 }
 
 fn creat_user(connection: &SqliteConnection, name: String) -> User {
-  let new_user = User::new(name);
-  new_user.save(connection)
+  let new_user = User::create(connection, name);
+  println!("NEW USER {:?}", new_user);
+  new_user
+}
+
+fn create_credential(connection: &SqliteConnection, user: &User) -> Credential {
+
+  let new_credential = Credential::create()
 }
 
 fn test1() {

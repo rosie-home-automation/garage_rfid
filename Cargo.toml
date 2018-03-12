@@ -10,6 +10,7 @@ default = []
 # tokio = ["sysfs_gpio/tokio"]
 
 [dependencies]
+chrono = "0.4.0"
 config = "0.8"
 error-chain = "0.11.0"
 diesel = { version = "1.1.1", features = ["chrono", "sqlite", "uuid"] }
@@ -17,9 +18,9 @@ mio = "0.6"
 serde = "1.0.27"
 serde_derive = "1.0.27"
 sysfs_gpio = { version = "0.5", features = ["mio-evented"] }
-uuid = "0.6.1"
+uuid = { version = "0.6.1", features = ["v4"] }
 
 [dev-dependencies]
 cargo-watch = "6.0.0"
-diesel_cli = "1.1.0"
+diesel_cli = { version = "1.1.0", default-features = false, features = ["sqlite"] }
 dotenv = "0.10.1"
