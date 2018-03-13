@@ -8,6 +8,8 @@ extern crate mio;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate slog;
 extern crate sysfs_gpio;
 extern crate uuid;
 

@@ -2,5 +2,6 @@ CREATE TABLE users (
   id VARCHAR PRIMARY KEY NOT NULL,
   name VARCHAR NOT NULL,
   created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL
+  updated_at DATETIME NOT NULL,
+  taco_at DATETIME NOT NULL
 )
