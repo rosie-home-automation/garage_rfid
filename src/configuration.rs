@@ -6,6 +6,12 @@ pub struct DatabaseConfiguration {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct LoggingConfiguration {
+  pub level: String,
+  pub log_file_path: String
+}
+
+#[derive(Debug, Deserialize)]
 pub struct GarageDoorConfiguration {
   pub opener_gpio: usize,
   pub sensor_gpio: usize,
@@ -27,6 +33,7 @@ pub struct RfidReaderConfiguration {
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
   pub database: DatabaseConfiguration,
+  pub logging: LoggingConfiguration,
   pub garage_door: GarageDoorConfiguration,
   pub rfid_reader: RfidReaderConfiguration
 }

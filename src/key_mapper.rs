@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct KeyMapper<'a> {
   mapping: HashMap<&'a str, &'a str>
 }

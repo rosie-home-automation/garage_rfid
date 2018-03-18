@@ -1,6 +1,10 @@
 [database]
 url = "garage_rfid.sqlite3"
 
+[logging]
+level = "INFO"
+log_file_path = "logs/garage_rfid.log"
+
 [rfid_reader]
 # data_0_gpio = 18 # For the PCB
 data_0_gpio = 17 # Using for testing currently

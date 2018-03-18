@@ -1,25 +1,29 @@
-use std::sync::mpsc::{ Receiver, RecvTimeoutError };
+use slog;
+use std::sync::mpsc;
 use std::time::{ Duration, Instant };
 
 use key_mapper::KeyMapper;
 
+#[derive(Debug)]
 pub struct RfidBuffer<'a> {
-  rx: Receiver<u8>,
+  rx: mpsc::Receiver<u8>,
   bit_buffer: Vec<u8>,
-  pin_key_buffer_last_add_dt: Instant,
   pin_key_buffer: Vec<&'a str>,
+  pin_key_buffer_last_add_dt: Instant,
   key_mapper: KeyMapper<'a>,
   wait_timeout: Duration,
   read_timeout: Duration,
-  pin_key_timeout: Duration
+  pin_key_timeout: Duration,
+  logger: slog::Logger,
 }
 
 impl<'a> RfidBuffer<'a> {
   pub fn new(
-    rx: Receiver<u8>,
+    logger: slog::Logger,
+    rx: mpsc::Receiver<u8>,
     wait_timeout_ms: usize,
     read_timeout_ms: usize,
-    pin_key_timeout_secs: usize
+    pin_key_timeout_secs: usize,
   ) -> RfidBuffer<'a> {
     let bit_buffer =  Vec::new();
     let pin_key_buffer = Vec::new();
@@ -28,19 +32,23 @@ impl<'a> RfidBuffer<'a> {
     let wait_timeout = Duration::from_millis(wait_timeout_ms as u64);
     let read_timeout = Duration::from_millis(read_timeout_ms as u64);
     let pin_key_timeout = Duration::from_secs(pin_key_timeout_secs as u64);
-    RfidBuffer {
-      rx,
-      bit_buffer,
-      pin_key_buffer,
-      pin_key_buffer_last_add_dt,
-      key_mapper,
-      wait_timeout,
-      read_timeout,
-      pin_key_timeout
-    }
+    let mut rfid_buffer = RfidBuffer {
+      rx: rx,
+      bit_buffer: bit_buffer,
+      pin_key_buffer: pin_key_buffer,
+      pin_key_buffer_last_add_dt: pin_key_buffer_last_add_dt,
+      key_mapper: key_mapper,
+      wait_timeout: wait_timeout,
+      read_timeout: read_timeout,
+      pin_key_timeout: pin_key_timeout,
+      logger: logger
+    };
+    rfid_buffer.setup_logger();
+    rfid_buffer
   }
 
   pub fn start(&mut self) {
+    info!(self.logger, "Starting...");
     loop {
       self.wait_for_data();
     }
@@ -52,13 +60,13 @@ impl<'a> RfidBuffer<'a> {
         self.add_bit(bit);
         self.read_data();
       },
-      Err(RecvTimeoutError::Timeout) => {
-        println!("TIMEOUT: BITS {:?}, PIN KEYS: {:?}", self.bits(), self.pin_keys());
+      Err(mpsc::RecvTimeoutError::Timeout) => {
+        // info!(self.logger, "Wait timeout"; "bits" => self.bits(), "pin_keys" => self.pin_keys());
         if self.pin_key_buffer_is_stale() {
           self.clear_pin_key_buffer()
         }
       },
-      Err(err) =>  println!("Buffer Error: {:?}", err)
+      Err(err) => error!(self.logger, "Buffer error"; "err" => format!("{:?}", err))
     }
   }
 
@@ -66,23 +74,23 @@ impl<'a> RfidBuffer<'a> {
     loop {
       match self.rx.recv_timeout(self.read_timeout) {
         Ok(bit) => self.add_bit(bit),
-        Err(RecvTimeoutError::Timeout) => {
-          println!("Buffer Timeout: trying to match {}", self.bits());
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+          info!(self.logger, "Buffer timeout: trying to match"; "bits" => self.bits());
           match self.key_mapper.key(&self.bits()) {
             Some("#") => {
-              println!("AUTHORIZE PIN: {:?}", self.pin_keys());
+              info!(self.logger, "Authorize pin"; "pin_keys" => self.pin_keys());
               self.clear_pin_key_buffer();
             },
             Some("*") => {
-              println!("CLEAR PIN");
+              info!(self.logger, "Clear pin");
               self.clear_pin_key_buffer();
             },
             Some(pin_key) => {
               self.add_pin_key(pin_key);
-              println!("PIN {:?}", self.pin_key_buffer);
+              info!(self.logger, "Add pin key"; "pin_keys" => self.pin_keys());
             },
             None => {
-              println!("AUTHORIZE RFID: {:?}", self.bits());
+              info!(self.logger, "Authorize rfid"; "bits" => self.bits());
               self.clear_pin_key_buffer();
             }
           }
@@ -90,11 +98,11 @@ impl<'a> RfidBuffer<'a> {
           break;
         },
         Err(err) => {
-          println!("Buffer Error: {:?}", err);
+          error!(self.logger, "Buffer Error"; "err" => format!("{:?}", err));
           break;
         }
       }
-      println!("BITS {:?}, PIN KEYS: {:?}", self.bits(), self.pin_keys());
+      // info!(self.logger, "Loop"; "bits" => self.bits(), "pin_keys" => self.pin_keys());
     }
   }
 
@@ -114,7 +122,7 @@ impl<'a> RfidBuffer<'a> {
   }
 
   fn clear_bit_buffer(&mut self) {
-    println!("CLEAR BIT BUFFER");
+    info!(self.logger, "Clear bit buffer");
     self.bit_buffer.clear();
   }
 
@@ -128,7 +136,11 @@ impl<'a> RfidBuffer<'a> {
   }
 
   fn clear_pin_key_buffer(&mut self) {
-    println!("CLEAR PIN KEY BUFFER");
+    info!(self.logger, "Clear pin key buffer");
     self.pin_key_buffer.clear();
+  }
+
+  fn setup_logger(&mut self) {
+    self.logger = self.logger.new(o!("rfid_buffer" => format!("{:?}", self)));
   }
 }
