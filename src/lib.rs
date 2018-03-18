@@ -10,15 +10,19 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate slog;
+extern crate slog_async;
+extern crate slog_term;
 extern crate sysfs_gpio;
 extern crate uuid;
+
+pub mod great_manager;
 
 pub mod errors;
 pub mod configuration;
 pub mod database;
-pub mod great_manager;
 pub mod key_mapper;
 pub mod rfid_reader;
 pub mod rfid_buffer;
+pub mod root_logger;
 pub mod schema;
 pub mod models;
