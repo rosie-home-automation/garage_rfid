@@ -8,6 +8,7 @@ extern crate mio;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 #[macro_use]
 extern crate slog;
 extern crate slog_async;
@@ -21,6 +22,7 @@ pub mod errors;
 pub mod configuration;
 pub mod database;
 pub mod key_mapper;
+pub mod log_data;
 pub mod rfid_reader;
 pub mod rfid_buffer;
 pub mod root_logger;
