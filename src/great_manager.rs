@@ -7,7 +7,6 @@ use configuration::Configuration;
 use database::Database;
 use root_logger::RootLogger;
 use rfid_reader::RfidReader;
-use models::user::User;
 
 pub struct GreatManager {
   pub configuration: Configuration,
