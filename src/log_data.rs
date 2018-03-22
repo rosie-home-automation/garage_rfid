@@ -2,6 +2,7 @@ use diesel::deserialize::{self, FromSql};
 use diesel::sqlite::Sqlite;
 use diesel::sql_types::*;
 use diesel::serialize::{self, Output, ToSql};
+use diesel::backend::Backend;
 use serde_json;
 use std::io::Write;
 
@@ -24,24 +25,25 @@ pub struct AuthFailData {
   pub value: String,
 }
 
-impl FromSql<Text, Sqlite> for LogData {
-  fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-    match <String as FromSql<Text, Sqlite>>::from_sql(bytes)? {
-      Some(s) => {
-        let result: LogData = serde_json::from_str(s);
+impl<DB> FromSql<Text, DB> for LogData  where DB: Backend {
+  fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
+    match <String as FromSql<Text, DB>>::from_sql(bytes)? {
+      s => {
+        let result: LogData = serde_json::from_str(&s).unwrap();
         Ok(result)
       },
-      None => Ok(None),
+      _ => panic!("Not sure what happened"), // Should probably allow for none
     }
   }
 }
 
 impl ToSql<Text, Sqlite> for LogData {
   fn to_sql<W: Write>(&self, out: &mut Output<W, Sqlite>) -> serialize::Result {
-    let x = serde_json::to_string(*self);
+    let x = serde_json::to_string(&self);
     match x {
-      Ok(result) => ToSql::<Text, Sqlite>::to_sql(&x, out),
-      Err(err) => err,
+      Ok(result) => ToSql::<Text, Sqlite>::to_sql(&result, out),
+      _ => panic!("ToSql: Not sure what happened"), // Should probably handle an error
+      //  Err(err) => err,
     }
   }
 }
