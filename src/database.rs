@@ -3,6 +3,7 @@ use slog;
 
 use configuration::Configuration;
 
+#[derive(Clone, Debug)]
 pub struct Database {
   database_url: String,
   logger: slog::Logger,
@@ -19,7 +20,7 @@ impl Database {
     match SqliteConnection::establish(&self.database_url) {
       Ok(conn) => conn,
       Err(err) => {
-        error!(self.logger, "Error connecting to the database.");
+        error!(self.logger, "Error connecting to the database."; "err" => ?err);
         panic!("TODO: Remove panic for Database::connection");
       }
     }
