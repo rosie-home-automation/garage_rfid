@@ -81,39 +81,67 @@ impl<'a> RfidBuffer<'a> {
   }
 
   fn read_data(&mut self) {
-    loop {
+    'read_data_loop: loop {
       match self.rx.recv_timeout(self.read_timeout) {
         Ok(bit) => self.add_bit(bit),
         Err(mpsc::RecvTimeoutError::Timeout) => {
-          info!(self.logger, "Buffer timeout: trying to match"; "bits" => self.bits());
-          match self.key_mapper.key(&self.bits()) {
-            Some("#") => {
-              info!(self.logger, "Authorize pin"; "pin_keys" => self.pin_keys());
-              self.clear_pin_key_buffer();
-            },
-            Some("*") => {
-              info!(self.logger, "Clear pin");
-              self.clear_pin_key_buffer();
-            },
-            Some(pin_key) => {
-              self.add_pin_key(pin_key);
-              info!(self.logger, "Add pin key"; "pin_keys" => self.pin_keys());
-            },
-            None => {
-              info!(self.logger, "Authorize rfid"; "bits" => self.bits());
-              self.clear_pin_key_buffer();
-            }
-          }
-          self.clear_bit_buffer();
-          break;
+          self.process_bit_buffer();
+          break 'read_data_loop;
         },
         Err(err) => {
           error!(self.logger, "Buffer Error"; "err" => format!("{:?}", err));
-          break;
+          break 'read_data_loop;
         }
       }
       // info!(self.logger, "Loop"; "bits" => self.bits(), "pin_keys" => self.pin_keys());
     }
+  }
+
+  fn process_bit_buffer(&mut self) {
+    info!(self.logger, "Buffer timeout: trying to match"; "bits" => self.bits());
+    if self.bits().len() < 8 {
+      info!(self.logger, "TODO: Ignore if there are less than 8 bits");
+    }
+    match self.key_mapper.key(&self.bits()) {
+      Some("#") => {
+        self.authorize_pin();
+      },
+      Some("*") => {
+        self.clear_pin_key_buffer();
+      },
+      Some(pin_key) => {
+        self.add_pin_key(pin_key);
+      },
+      None => {
+        self.authorize_rfid();
+      }
+    }
+    self.clear_bit_buffer();
+  }
+
+  fn authorize_pin(&mut self) {
+    info!(self.logger, "Authorize pin"; "pin_keys" => self.pin_keys());
+    let result = self.bouncer.is_authorized(self.logger.clone(), Variety::PIN, &self.pin_keys());
+    self.process_authorization(result);
+  }
+
+  fn authorize_rfid(&mut self) {
+    info!(self.logger, "Authorize rfid"; "bits" => self.bits());
+    let result = self.bouncer.is_authorized(self.logger.clone(), Variety::RFID, &self.bits());
+    self.process_authorization(result);
+  }
+
+  fn process_authorization(&mut self, result: Result<bool, diesel::result::Error>) {
+    match result {
+      Ok(true) => {
+        info!(self.logger, "TODO: Open the garage door!");
+      },
+      Err(err) => {
+        error!(self.logger, "Error authorizing!"; "err" => ?err);
+      },
+      _ => {}
+    }
+    self.clear_pin_key_buffer();
   }
 
   fn add_bit(&mut self, bit: u8) {
@@ -139,6 +167,7 @@ impl<'a> RfidBuffer<'a> {
   fn add_pin_key(&mut self, pin_key: &'a str) {
     self.pin_key_buffer.push(pin_key);
     self.pin_key_buffer_last_add_dt = Instant::now();
+    info!(self.logger, "Add pin key"; "pin_keys" => self.pin_keys());
   }
 
   fn pin_keys(&self) -> String {
