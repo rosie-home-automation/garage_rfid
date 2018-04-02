@@ -6,6 +6,7 @@ use std::sync::mpsc;
 use sysfs_gpio;
 
 use configuration::Configuration;
+use database::Database;
 use rfid_buffer::RfidBuffer;
 
 #[derive(Debug)]
@@ -19,10 +20,13 @@ pub struct RfidReader {
   pin_key_timeout_secs: usize,
   async_pin_pollers: Vec<sysfs_gpio::AsyncPinPoller>,
   logger: slog::Logger,
+  database: Database,
 }
 
 impl RfidReader {
-  pub fn new(logger: slog::Logger, configuration: &Configuration) -> RfidReader {
+  pub fn new(logger: slog::Logger, configuration: &Configuration, database: Database)
+    -> RfidReader
+  {
     let data_0_gpio = configuration.rfid_reader.data_0_gpio;
     let data_1_gpio = configuration.rfid_reader.data_1_gpio;
     let _green_led_gpio = configuration.rfid_reader.green_led_gpio;
@@ -41,6 +45,7 @@ impl RfidReader {
       pin_key_timeout_secs,
       async_pin_pollers,
       logger: logger,
+      database,
     };
     rfid_reader.setup_logger();
     rfid_reader
@@ -59,9 +64,11 @@ impl RfidReader {
     let pin_key_timeout_secs = self.pin_key_timeout_secs;
     let (tx, rx): (mpsc::Sender<u8>, mpsc::Receiver<u8>) = mpsc::channel();
     let logger = self.logger.clone();
+    let database = self.database.clone();
     let _buffer_thread = thread::spawn(move || {
       let mut rfid_buffer = RfidBuffer::new(
         logger,
+        database,
         rx,
         wait_timeout_ms,
         read_timeout_ms,
@@ -83,7 +90,9 @@ impl RfidReader {
     });
   }
 
-  fn setup_data_pin(&self, pin_num: usize, value: usize, poller: &mio::Poll) -> sysfs_gpio::AsyncPinPoller {
+  fn setup_data_pin(&self, pin_num: usize, value: usize, poller: &mio::Poll)
+    -> sysfs_gpio::AsyncPinPoller
+  {
     info!(self.logger, "Setting up gpio"; "pin_num" => pin_num);
     let pin = sysfs_gpio::Pin::new(pin_num as u64);
     let token = mio::Token(value);
@@ -93,7 +102,8 @@ impl RfidReader {
     pin.set_edge(sysfs_gpio::Edge::FallingEdge).unwrap();
 
     let async_pin_poller = pin.get_async_poller().unwrap();
-    poller.register(&async_pin_poller, token, mio::Ready::readable(), mio::PollOpt::edge()).unwrap();
+    poller.register(&async_pin_poller, token, mio::Ready::readable(), mio::PollOpt::edge())
+      .unwrap();
     async_pin_poller
   }
 

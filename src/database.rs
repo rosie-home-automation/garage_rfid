@@ -3,6 +3,7 @@ use slog;
 
 use configuration::Configuration;
 
+#[derive(Clone, Debug)]
 pub struct Database {
   database_url: String,
   logger: slog::Logger,
