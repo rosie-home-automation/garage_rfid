@@ -6,6 +6,7 @@ use std::sync::mpsc;
 use sysfs_gpio;
 
 use configuration::Configuration;
+use database::Database;
 use rfid_buffer::RfidBuffer;
 
 #[derive(Debug)]
@@ -19,10 +20,13 @@ pub struct RfidReader {
   pin_key_timeout_secs: usize,
   async_pin_pollers: Vec<sysfs_gpio::AsyncPinPoller>,
   logger: slog::Logger,
+  database: Database,
 }
 
 impl RfidReader {
-  pub fn new(logger: slog::Logger, configuration: &Configuration) -> RfidReader {
+  pub fn new(logger: slog::Logger, configuration: &Configuration, database: Database)
+    -> RfidReader
+  {
     let data_0_gpio = configuration.rfid_reader.data_0_gpio;
     let data_1_gpio = configuration.rfid_reader.data_1_gpio;
     let _green_led_gpio = configuration.rfid_reader.green_led_gpio;
@@ -41,6 +45,7 @@ impl RfidReader {
       pin_key_timeout_secs,
       async_pin_pollers,
       logger: logger,
+      database,
     };
     rfid_reader.setup_logger();
     rfid_reader

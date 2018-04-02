@@ -1,7 +1,10 @@
+use diesel;
 use slog;
 use std::sync::mpsc;
 use std::time::{ Duration, Instant };
 
+use bouncer::{ Bouncer, Variety };
+use database::Database;
 use key_mapper::KeyMapper;
 
 #[derive(Debug)]
@@ -14,12 +17,15 @@ pub struct RfidBuffer<'a> {
   wait_timeout: Duration,
   read_timeout: Duration,
   pin_key_timeout: Duration,
+  bouncer: Bouncer,
+  database: Database,
   logger: slog::Logger,
 }
 
 impl<'a> RfidBuffer<'a> {
   pub fn new(
     logger: slog::Logger,
+    database: Database,
     rx: mpsc::Receiver<u8>,
     wait_timeout_ms: usize,
     read_timeout_ms: usize,
@@ -32,6 +38,8 @@ impl<'a> RfidBuffer<'a> {
     let wait_timeout = Duration::from_millis(wait_timeout_ms as u64);
     let read_timeout = Duration::from_millis(read_timeout_ms as u64);
     let pin_key_timeout = Duration::from_secs(pin_key_timeout_secs as u64);
+    let connection = database.connection();
+    let bouncer = Bouncer::new(connection);
     let mut rfid_buffer = RfidBuffer {
       rx: rx,
       bit_buffer: bit_buffer,
@@ -41,6 +49,8 @@ impl<'a> RfidBuffer<'a> {
       wait_timeout: wait_timeout,
       read_timeout: read_timeout,
       pin_key_timeout: pin_key_timeout,
+      bouncer: bouncer,
+      database: database,
       logger: logger
     };
     rfid_buffer.setup_logger();
