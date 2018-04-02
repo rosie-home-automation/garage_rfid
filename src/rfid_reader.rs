@@ -59,9 +59,11 @@ impl RfidReader {
     let pin_key_timeout_secs = self.pin_key_timeout_secs;
     let (tx, rx): (mpsc::Sender<u8>, mpsc::Receiver<u8>) = mpsc::channel();
     let logger = self.logger.clone();
+    let database = self.database.clone();
     let _buffer_thread = thread::spawn(move || {
       let mut rfid_buffer = RfidBuffer::new(
         logger,
+        database,
         rx,
         wait_timeout_ms,
         read_timeout_ms,

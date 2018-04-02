@@ -22,8 +22,8 @@ impl GreatManager {
     let root_logger = RootLogger::new(&configuration);
     let logger = root_logger.root_logger.clone();
     info!(logger, "Initializing...");
-    let rfid_reader = RfidReader::new(logger.clone(), &configuration);
     let database = Database::new(logger.clone(), &configuration);
+    let rfid_reader = RfidReader::new(logger.clone(), &configuration, database.clone());
     info!(logger, "Initialized");
     Ok(GreatManager {
       configuration: configuration,
