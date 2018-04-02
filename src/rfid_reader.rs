@@ -90,7 +90,9 @@ impl RfidReader {
     });
   }
 
-  fn setup_data_pin(&self, pin_num: usize, value: usize, poller: &mio::Poll) -> sysfs_gpio::AsyncPinPoller {
+  fn setup_data_pin(&self, pin_num: usize, value: usize, poller: &mio::Poll)
+    -> sysfs_gpio::AsyncPinPoller
+  {
     info!(self.logger, "Setting up gpio"; "pin_num" => pin_num);
     let pin = sysfs_gpio::Pin::new(pin_num as u64);
     let token = mio::Token(value);
@@ -100,7 +102,8 @@ impl RfidReader {
     pin.set_edge(sysfs_gpio::Edge::FallingEdge).unwrap();
 
     let async_pin_poller = pin.get_async_poller().unwrap();
-    poller.register(&async_pin_poller, token, mio::Ready::readable(), mio::PollOpt::edge()).unwrap();
+    poller.register(&async_pin_poller, token, mio::Ready::readable(), mio::PollOpt::edge())
+      .unwrap();
     async_pin_poller
   }
 
