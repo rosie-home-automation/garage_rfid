@@ -3,4 +3,5 @@ CREATE TABLE users (
   name VARCHAR NOT NULL,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL
-)
+);
+CREATE UNIQUE INDEX udx_users_name ON users(name);

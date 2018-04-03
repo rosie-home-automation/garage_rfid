@@ -11,6 +11,17 @@ table! {
 }
 
 table! {
+    logs (id) {
+        id -> Text,
+        module -> Text,
+        action -> Text,
+        user_id -> Nullable<Text>,
+        data -> Nullable<Text>,
+        created_at -> Timestamp,
+    }
+}
+
+table! {
     users (id) {
         id -> Text,
         name -> Text,
@@ -21,5 +32,6 @@ table! {
 
 allow_tables_to_appear_in_same_query!(
     credentials,
+    logs,
     users,
 );

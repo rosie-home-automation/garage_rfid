@@ -27,11 +27,11 @@ impl User {
 
     match result {
       Ok(_num_rows) => {
-        info!(logger, "Created user"; "user" => format!("{:?}", new_user));
+        info!(logger, "Created user"; "user" => ?new_user);
         new_user
       },
       Err(err) => {
-        crit!(logger, "Failed to create user"; "user" => format!("{:?}", new_user), "error" => format!("{:?}", err));
+        crit!(logger, "Failed to create user"; "user" => ?new_user, "error" => %err);
         panic!("TODO: Remove panic for User::create");
       }
     }

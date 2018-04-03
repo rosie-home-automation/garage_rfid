@@ -7,7 +7,7 @@ authors = ["olson3r <scootles.olson@gmail.com>"]
 default = []
 
 [dependencies]
-chrono = "0.4.0"
+chrono = { version = "0.4.0", features = ["serde"] }
 config = "0.8"
 error-chain = "0.11.0"
 diesel = { version = "1.1.1", features = ["chrono", "sqlite", "uuid"] }

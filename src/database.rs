@@ -20,7 +20,7 @@ impl Database {
     match SqliteConnection::establish(&self.database_url) {
       Ok(conn) => conn,
       Err(err) => {
-        error!(self.logger, "Error connecting to the database."; "err" => ?err);
+        error!(self.logger, "Error connecting to the database."; "err" => %err);
         panic!("TODO: Remove panic for Database::connection");
       }
     }

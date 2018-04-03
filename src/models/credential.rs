@@ -46,13 +46,13 @@ impl Credential {
       .execute(conn);
     match result {
       Ok(_num_rows) => {
-        info!(logger, "Created credential"; "credential" => format!("{:?}", new_credential));
+        info!(logger, "Created credential"; "credential" => ?new_credential);
         new_credential
       },
       Err(err) => {
         error!(logger, "Failed to create credential";
-          "credential" => format!("{:?}", new_credential),
-          "err" => format!("{:?}", err)
+          "credential" => ?new_credential,
+          "err" => %err
         );
         panic!("TODO: Remove panic for Credential::create");
       }
