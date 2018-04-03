@@ -7,32 +7,20 @@ use serde_json;
 use std::io::Write;
 
 #[derive(Debug, Serialize, Deserialize)]
-#[derive(AsExpression, FromSqlRow, Copy, Clone)]
+#[derive(AsExpression, FromSqlRow, Clone)]
 #[sql_type = "Text"]
 pub enum LogData {
-  AuthSuccessData,
-  AuthFailData,
+  AuthSuccessData { credential_id: String },
+  AuthFailData { variety: String, value: String },
 }
 
-#[derive(Debug)]
-pub struct AuthSuccessData {
-  pub credential_id: String,
-}
-
-#[derive(Debug)]
-pub struct AuthFailData {
-  pub variety: String,
-  pub value: String,
-}
-
-impl<DB> FromSql<Text, DB> for LogData  where DB: Backend {
+impl<DB> FromSql<Text, DB> for LogData  where DB: Backend, String: FromSql<Text, DB> {
   fn from_sql(bytes: Option<&DB::RawValue>) -> deserialize::Result<Self> {
     match <String as FromSql<Text, DB>>::from_sql(bytes)? {
       s => {
         let result: LogData = serde_json::from_str(&s).unwrap();
         Ok(result)
-      },
-      _ => panic!("Not sure what happened"), // Should probably allow for none
+      }
     }
   }
 }

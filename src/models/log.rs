@@ -7,6 +7,7 @@ use uuid::Uuid;
 // use log_data::LogData;
 use models::user::User;
 use schema::logs;
+use log_data::LogData;
 
 #[derive(Debug)]
 #[derive(Associations, Identifiable, Insertable, Queryable)]
@@ -19,20 +20,19 @@ pub struct Log {
   pub action: String,
   pub user_id: Option<String>,
   // pub data: Option<LogData>,
-  pub data: Option<String>,
+  pub data: Option<LogData>,
   pub created_at: NaiveDateTime,
 }
 
 impl Log {
   pub fn create(
-    logger: &slog::Logger,
+    logger: slog::Logger,
     conn: &SqliteConnection,
     module: &str,
     action: &str,
     user_id: Option<&str>,
-    data: Option<&str>,
+    data: Option<LogData>,
   ) -> Log {
-    let logger = logger.clone();
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().naive_utc();
     let new_log = Log {
@@ -40,7 +40,8 @@ impl Log {
       module: module.to_string(),
       action: action.to_string(),
       user_id: Log::format_user_id(user_id),
-      data: Log::format_data(data),
+      // data: Log::format_data(data),
+      data: data,
       created_at: now,
     };
     let result = diesel::insert_into(logs::table)
@@ -65,10 +66,10 @@ impl Log {
     }
   }
 
-  fn format_data(data: Option<&str>) -> Option<String> {
-    match data {
-      Some(json) => Some(json.to_string()),
-      None => None
-    }
-  }
+  // fn format_data(data: Option<&str>) -> Option<String> {
+  //   match data {
+  //     Some(json) => Some(json.to_string()),
+  //     None => None
+  //   }
+  // }
 }
