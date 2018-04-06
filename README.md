@@ -4,11 +4,30 @@ A rust implementation of the garage/RFID controller.
 ## TODO
 - [x] Implement RFID Reader
   - [x] Read GPIO input from 2 pins concurrently
-- [ ] Implement DB
-  - [ ] SQLite
-  - [ ] Migrations
-- [ ] Implement authorizer
+- [x] Implement DB
+  - [x] SQLite
+  - [x] Migrations
+- [x] Implement authorizer
+  - Called it a bouncer
+- [ ] Implement Garage Door
+- [ ] Use bcrypt to encrypt credential values
 - [ ] Implement API
+  - [ ] Users#index
+  - [ ] Users#show
+  - [ ] Users#create
+  - [ ] Users#update
+  - [ ] Users#destroy
+  - [ ] Credentials#index
+  - [ ] Credentials#show
+  - [ ] Credentials#create
+  - [ ] Credentials#update
+  - [ ] Credentials#destroy
+  - [ ] GarageDoor#show
+  - [ ] GarageDoor#toggle
+  - [ ] GarageDoor#open
+  - [ ] GarageDoor#close
+- [ ] Many refactors...
+  - [ ] Check out tokio instead of mio for RfidReader
 
 
 ## Resources
