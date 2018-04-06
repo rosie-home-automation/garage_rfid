@@ -5,12 +5,14 @@ use std::time::Duration;
 
 use configuration::Configuration;
 use database::Database;
+use http_server::HttpServer;
 use root_logger::RootLogger;
 use rfid_reader::RfidReader;
 
 pub struct GreatManager {
   pub configuration: Configuration,
   pub database: Database,
+  pub http_server: HttpServer,
   pub rfid_reader: RfidReader,
   pub root_logger: RootLogger,
 }
@@ -23,10 +25,12 @@ impl GreatManager {
     info!(logger, "Initializing...");
     let database = Database::new(logger.clone(), &configuration);
     let rfid_reader = RfidReader::new(logger.clone(), &configuration, database.clone());
+    let http_server = HttpServer::new(&configuration, database.clone(), logger.clone());
     info!(logger, "Initialized");
     Ok(GreatManager {
       configuration: configuration,
       database: database,
+      http_server: http_server,
       rfid_reader: rfid_reader,
       root_logger: root_logger,
     })
@@ -35,6 +39,7 @@ impl GreatManager {
   pub fn start(&mut self) {
     info!(self.root_logger(), "Starting...");
     self.rfid_reader.start();
+    self.http_server.start();
     loop {
       thread::sleep(Duration::from_millis(1000));
     }
