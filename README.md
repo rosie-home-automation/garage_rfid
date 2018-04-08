@@ -12,7 +12,7 @@ A rust implementation of the garage/RFID controller.
 - [ ] Implement Garage Door
 - [ ] Use bcrypt to encrypt credential values
 - [ ] Implement API
-  - [ ] Users#index
+  - [x] Users#index
   - [ ] Users#show
   - [ ] Users#create
   - [ ] Users#update
@@ -27,6 +27,9 @@ A rust implementation of the garage/RFID controller.
   - [ ] GarageDoor#open
   - [ ] GarageDoor#close
 - [ ] Many refactors...
+  - [ ] R2D2
+    - https://github.com/diesel-rs/r2d2-diesel/blob/master/examples/sqlite.rs
+    - https://github.com/gotham-rs/gotham/pull/198/files
   - [ ] Check out tokio instead of mio for RfidReader
 
 
