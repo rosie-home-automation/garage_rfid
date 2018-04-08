@@ -7,10 +7,15 @@ authors = ["olson3r <scootles.olson@gmail.com>"]
 default = []
 
 [dependencies]
-chrono = "0.4.0"
+chrono = { version = "0.4.0", features = ["serde"] }
 config = "0.8"
-error-chain = "0.11.0"
 diesel = { version = "1.1.1", features = ["chrono", "sqlite", "uuid"] }
+error-chain = "0.11.0"
+futures = "0.1.21"
+gotham = "0.2.0"
+gotham_derive = "0.2.0"
+hyper = "0.11.24"
+mime = "0.3.5"
 mio = "0.6"
 serde = "1.0.27"
 serde_derive = "1.0.27"
@@ -22,8 +27,11 @@ slog-json = "2.2.0"
 slog-term = "2.3.0"
 sysfs_gpio = { version = "0.5", features = ["mio-evented"] }
 uuid = { version = "0.6.1", features = ["v4"] }
+r2d2 = "0.8.2"
+r2d2-diesel = "1.0.0"
 
 [dev-dependencies]
+cargo-edit = "0.2.0"
 cargo-watch = "6.0.0"
 diesel_cli = { version = "1.1.0", default-features = false, features = ["sqlite"] }
 dotenv = "0.10.1"

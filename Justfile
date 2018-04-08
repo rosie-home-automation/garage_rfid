@@ -3,3 +3,6 @@ watch-main:
 
 watch-example example:
   cargo watch -i "logs/**/*" -x "build --example {{example}}" -s "RUST_BACKTRACE=1 ./target/debug/examples/{{example}}"
+
+watch-sync:
+  cargo watch -i "logs/**/*" -i ".git/**/*" -s "./sync.sh"

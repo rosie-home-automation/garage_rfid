@@ -4,10 +4,16 @@ extern crate config;
 extern crate diesel;
 #[macro_use]
 extern crate error_chain;
+extern crate gotham;
+#[macro_use]
+extern crate gotham_derive;
+extern crate hyper;
+extern crate mime;
 extern crate mio;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 #[macro_use]
 extern crate slog;
 extern crate slog_async;
@@ -21,9 +27,12 @@ pub mod bouncer;
 pub mod errors;
 pub mod configuration;
 pub mod database;
+pub mod http_server;
 pub mod key_mapper;
+pub mod request_logging_middleware;
 pub mod rfid_reader;
 pub mod rfid_buffer;
 pub mod root_logger;
 pub mod schema;
 pub mod models;
+pub mod users_controller;

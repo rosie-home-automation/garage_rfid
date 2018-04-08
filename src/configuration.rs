@@ -20,6 +20,12 @@ pub struct GarageDoorConfiguration {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct HttpServerConfiguration {
+  pub address: String,
+  pub port: usize,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct RfidReaderConfiguration {
   pub data_0_gpio: usize,
   pub data_1_gpio: usize,
@@ -35,6 +41,7 @@ pub struct Configuration {
   pub database: DatabaseConfiguration,
   pub logging: LoggingConfiguration,
   pub garage_door: GarageDoorConfiguration,
+  pub http_server: HttpServerConfiguration,
   pub rfid_reader: RfidReaderConfiguration
 }
 

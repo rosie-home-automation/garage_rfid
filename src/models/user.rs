@@ -1,12 +1,13 @@
 use chrono::prelude::{NaiveDateTime, Utc};
 use diesel;
 use diesel::prelude::*;
+use serde_json;
 use slog;
 use uuid::Uuid;
 
 use schema::users;
 
-#[derive(Debug, Identifiable, Insertable, Queryable)]
+#[derive(Debug, Serialize, Deserialize, Identifiable, Insertable, Queryable)]
 #[table_name="users"]
 pub struct User {
   pub id: String,
