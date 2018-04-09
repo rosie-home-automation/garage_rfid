@@ -8,7 +8,7 @@ use slog;
 use configuration::Configuration;
 use database::Database;
 use request_logging_middleware::RequestLoggingMiddleware;
-use users_controller::UsersController;
+use users_controller::{UsersController, UserPathParams};
 
 #[derive(Debug)]
 pub struct HttpServer {
@@ -44,7 +44,17 @@ impl HttpServer {
     let (chain, pipelines) = single_pipeline(new_pipeline().add(request_middleware).build());
     build_router(chain, pipelines, |route| {
       route.scope("/api/v1", |route| {
-        route.get("/users").to_new_handler(move || Ok(|state| users_controller.index(state)));
+        {
+          let users_controller = users_controller.clone();
+          route.get("/users")
+            .to_new_handler(move || Ok(|state| users_controller.index(state)));
+        }
+        {
+          let users_controller = users_controller.clone();
+          route.get("/users/:id")
+            .with_path_extractor::<UserPathParams>()
+            .to_new_handler(move || Ok(|state| users_controller.show(state)));
+        }
       });
     })
   }
