@@ -28,8 +28,10 @@ impl Middleware for RequestLoggingMiddleware {
       let http_version = HttpVersion::borrow_from(&state);
       let headers = Headers::borrow_from(&state);
       let body = Body::borrow_from(&state);
+      let request_id = &state.request_id;
       info!(self.logger, "Request recieved."; "method" => ?method, "uri" => ?uri,
-        "http_version" => ?http_version, "headers" => ?headers, "body" => ?body
+        "http_version" => ?http_version, "headers" => ?headers, "body" => ?body,
+        "request_id" => request_id,
       );
     }
 

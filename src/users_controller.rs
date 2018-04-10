@@ -119,6 +119,11 @@ impl UsersController {
     }
   }
 
+  // pub fn create(&self, state: State) -> (State, Response) {
+  //   let connection = self.connection();
+
+  // }
+
   fn connection(&self) -> SqliteConnection {
     self.database.connection()
   }
