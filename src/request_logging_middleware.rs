@@ -2,6 +2,7 @@ use hyper::{Body, Headers, HttpVersion, Method, Uri};
 use gotham::handler::HandlerFuture;
 use gotham::middleware::Middleware;
 use gotham::state::{FromState, State};
+use gotham::state::request_id;
 use slog;
 
 #[derive(Clone, NewMiddleware)]
@@ -28,10 +29,10 @@ impl Middleware for RequestLoggingMiddleware {
       let http_version = HttpVersion::borrow_from(&state);
       let headers = Headers::borrow_from(&state);
       let body = Body::borrow_from(&state);
-      let request_id = &state.request_id;
+      let request_id = request_id(&state);
       info!(self.logger, "Request recieved."; "method" => ?method, "uri" => ?uri,
         "http_version" => ?http_version, "headers" => ?headers, "body" => ?body,
-        "request_id" => request_id,
+        "request_id" => ?request_id,
       );
     }
 
