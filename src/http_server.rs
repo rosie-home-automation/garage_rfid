@@ -39,7 +39,7 @@ impl HttpServer {
   }
 
   fn router(&self) -> Router {
-    let users_controller = UsersController::new(self.database.clone(), self.logger.clone());
+    let users_controller = UsersController::new(self.database.pool().clone(), self.logger.clone());
     let request_middleware = RequestLoggingMiddleware::new(self.logger.clone());
     let (chain, pipelines) = single_pipeline(new_pipeline().add(request_middleware).build());
     build_router(chain, pipelines, |route| {

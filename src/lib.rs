@@ -4,12 +4,15 @@ extern crate config;
 extern crate diesel;
 #[macro_use]
 extern crate error_chain;
+extern crate futures;
 extern crate gotham;
 #[macro_use]
 extern crate gotham_derive;
 extern crate hyper;
 extern crate mime;
 extern crate mio;
+extern crate r2d2;
+extern crate r2d2_diesel;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
