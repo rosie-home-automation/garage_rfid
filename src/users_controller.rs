@@ -14,11 +14,16 @@ use slog;
 use diesel_middleware::DieselMiddleware;
 use logger_middleware::LoggerMiddleware;
 use models::user::User;
-use schema::users::dsl::*;
+use schema::users::dsl::users;
 
 #[derive(Deserialize, StateData, StaticResponseExtender)]
 pub struct UserPathParams {
   pub id: String
+}
+
+#[derive(Debug, Deserialize)]
+struct UserCreateParams {
+  name: String
 }
 
 pub struct UsersController;
@@ -115,31 +120,36 @@ impl UsersController {
     }
   }
 
-  // pub fn create(state: State) -> Box<HandlerFuture> {
-  //   let connection = self.connection();
-  //   let f = Body::take_from(&mut state)
-  //     .concat2()
-  //     .then(|full_body|
-  //       match full_body {
-  //         Ok(valid_body) => {
-  //           let body = String::from_utf8(valid_body.to_vec()).unwrap();
-  //           info!(self.logger, "Create request"; "body" => body, "valid_body" => ?valid_body);
-  //           let response = create_response(
-  //             &state,
-  //             StatusCode::Ok,
-  //             Some((body.into_bytes(), mime::TEXT_PLAIN)),
-  //           );
-  //           future::ok((state, response))
-  //         },
-  //         Err(err) => {
-  //           error!(self.logger, "Error during create"; "err" => ?err);
-  //           future::err((state, err.into_handler_error()))
-  //         },
-  //       }
-  //     );
+  pub fn create(mut state: State) -> Box<HandlerFuture> {
+    let connection = UsersController::connection(&state);
+    let logger = UsersController::logger(&state);
+    let f = Body::take_from(&mut state)
+      .concat2()
+      .then(move |full_body|
+        match full_body {
+          Ok(valid_body) => {
+            let body = String::from_utf8(valid_body.to_vec()).unwrap();
+            let new_user_data: UserCreateParams = serde_json::from_str(&body)
+              .expect("Failed to parse user from body.");
+            let new_user = User::create(&logger, &*connection, &new_user_data.name);
+            let new_user_json = serde_json::to_string(&new_user).unwrap();
+            info!(logger, "Create request"; "body" => &body, "new_user" => ?new_user);
+            let response = create_response(
+              &state,
+              StatusCode::Ok,
+              Some((new_user_json.into_bytes(), mime::APPLICATION_JSON)),
+            );
+            future::ok((state, response))
+          },
+          Err(err) => {
+            error!(logger, "Error during create"; "err" => ?err);
+            future::err((state, err.into_handler_error()))
+          },
+        }
+      );
 
-  //   Box::new(f)
-  // }
+    Box::new(f)
+  }
 
   fn connection(state: &State) -> r2d2::PooledConnection<r2d2_diesel::ConnectionManager<diesel::SqliteConnection>> {
     let diesel_middleware = DieselMiddleware::borrow_from(&state);

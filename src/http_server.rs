@@ -56,6 +56,8 @@ impl HttpServer {
         route.get("/users/:id")
           .with_path_extractor::<UserPathParams>()
           .to(UsersController::show);
+        route.post("/users")
+          .to(UsersController::create);
       });
     })
   }
