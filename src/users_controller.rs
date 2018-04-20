@@ -10,9 +10,9 @@ use r2d2;
 use r2d2_diesel;
 use serde_json;
 use slog;
-use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use database::Database;
+use diesel_middleware::DieselMiddleware;
+use logger_middleware::LoggerMiddleware;
 use models::user::User;
 use schema::users::dsl::*;
 
@@ -21,25 +21,12 @@ pub struct UserPathParams {
   pub id: String
 }
 
-pub struct UsersController {
-  pool: AssertUnwindSafe<r2d2::Pool<r2d2_diesel::ConnectionManager<SqliteConnection>>>,
-  logger: slog::Logger,
-}
+pub struct UsersController;
 
 impl UsersController {
-  pub fn new(
-    pool: r2d2::Pool<r2d2_diesel::ConnectionManager<SqliteConnection>>,
-    logger: slog::Logger
-  ) -> UsersController {
-    let pool = AssertUnwindSafe(pool);
-    UsersController {
-      pool: pool,
-      logger: logger,
-    }
-  }
-
-  pub fn index(&self, state: State) -> (State, Response) {
-    let connection = self.connection();
+  pub fn index(state: State) -> (State, Response) {
+    let connection = UsersController::connection(&state);
+    let logger = UsersController::logger(&state);
     let users_result = users.load::<User>(&*connection);
     match users_result {
       Ok(user_list) => {
@@ -54,7 +41,7 @@ impl UsersController {
             (state, response)
           },
           Err(err) => {
-            error!(self.logger, "Error converting users to json."; "err" => ?err); // TODO: Add trace id
+            error!(logger, "Error converting users to json."; "err" => ?err); // TODO: Add trace id
             let response = create_response(
               &state,
               StatusCode::InternalServerError,
@@ -65,7 +52,7 @@ impl UsersController {
         }
       },
       Err(err) => {
-        error!(self.logger, "Error loading users."; "err" => ?err); // TODO: Add trace id
+        error!(logger, "Error loading users."; "err" => ?err); // TODO: Add trace id
         let response = create_response(
           &state,
           StatusCode::InternalServerError,
@@ -76,8 +63,9 @@ impl UsersController {
     }
   }
 
-  pub fn show(&self, mut state: State) -> (State, Response) {
-    let connection = self.connection();
+  pub fn show(mut state: State) -> (State, Response) {
+    let connection = UsersController::connection(&state);
+    let logger = UsersController::logger(&state);
     let UserPathParams { id: user_id } = UserPathParams::take_from(&mut state);
     let user_response = users.find(&user_id).first::<User>(&*connection);
     match user_response {
@@ -93,7 +81,7 @@ impl UsersController {
             (state, response)
           },
           Err(err) => {
-            error!(self.logger, "Error converting user to json."; "err" => ?err); // TODO: Add trace id
+            error!(logger, "Error converting user to json."; "err" => ?err); // TODO: Add trace id
             let response = create_response(
               &state,
               StatusCode::InternalServerError,
@@ -104,7 +92,7 @@ impl UsersController {
         }
       },
       Err(err) => {
-        error!(self.logger, "Error loading user."; "err" => ?err, "id" => &user_id); // TODO: Add trace id
+        error!(logger, "Error loading user."; "err" => ?err, "id" => &user_id); // TODO: Add trace id
         match err {
           diesel::result::Error::NotFound => {
             let response = create_response(
@@ -153,20 +141,13 @@ impl UsersController {
   //   Box::new(f)
   // }
 
-  fn connection(&self)
-    -> r2d2::PooledConnection<r2d2_diesel::ConnectionManager<diesel::SqliteConnection>>
-  {
-    self.pool.get().expect("Could not get database connection.")
+  fn connection(state: &State) -> r2d2::PooledConnection<r2d2_diesel::ConnectionManager<diesel::SqliteConnection>> {
+    let diesel_middleware = DieselMiddleware::borrow_from(&state);
+    diesel_middleware.pool.get().expect("Expected a connection")
   }
-}
 
-impl Clone for UsersController {
-    fn clone(&self) -> UsersController {
-      let pool = AssertUnwindSafe(self.pool.clone());
-      let logger = self.logger.clone();
-      UsersController {
-        pool: pool,
-        logger: logger,
-      }
-    }
+  fn logger(state: &State) -> slog::Logger {
+    let logger_middleware = LoggerMiddleware::borrow_from(&state);
+    logger_middleware.logger.clone()
+  }
 }
