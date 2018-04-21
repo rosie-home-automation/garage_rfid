@@ -17,10 +17,11 @@ pub struct User {
 }
 
 impl User {
-  pub fn create(logger: &slog::Logger, conn: &SqliteConnection, name: String) -> User {
+  pub fn create(logger: &slog::Logger, conn: &SqliteConnection, name: &str) -> User {
     let logger = logger.clone();
     let id = Uuid::new_v4().to_string();
     let now = Utc::now().naive_utc();
+    let name = name.to_string();
     let new_user = User { id: id, name: name, created_at: now, updated_at: now };
     let result =  diesel::insert_into(users::table)
       .values(&new_user)

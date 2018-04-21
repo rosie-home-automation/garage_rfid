@@ -2,37 +2,37 @@ use diesel;
 use diesel::prelude::*;
 use gotham::http::response::create_response;
 use gotham::state::{FromState, State};
-use hyper::{Response, StatusCode};
+use gotham::handler::{HandlerFuture, IntoHandlerError};
+use futures::{future, Future, Stream};
+use hyper::{Body, Response, StatusCode};
 use mime;
+use r2d2;
+use r2d2_diesel;
 use serde_json;
 use slog;
 
-use database::Database;
+use diesel_middleware::DieselMiddleware;
+use logger_middleware::LoggerMiddleware;
 use models::user::User;
-use schema::users::dsl::*;
+use schema::users::dsl::users;
 
 #[derive(Deserialize, StateData, StaticResponseExtender)]
 pub struct UserPathParams {
   pub id: String
 }
 
-#[derive(Clone)]
-pub struct UsersController {
-  database: Database,
-  logger: slog::Logger,
+#[derive(Debug, Deserialize)]
+struct UserCreateParams {
+  name: String
 }
 
-impl UsersController {
-  pub fn new(database: Database, logger: slog::Logger) -> UsersController {
-    UsersController {
-      database: database,
-      logger: logger,
-    }
-  }
+pub struct UsersController;
 
-  pub fn index(&self, state: State) -> (State, Response) {
-    let connection = self.connection();
-    let users_result = users.load::<User>(&connection);
+impl UsersController {
+  pub fn index(state: State) -> (State, Response) {
+    let connection = UsersController::connection(&state);
+    let logger = UsersController::logger(&state);
+    let users_result = users.load::<User>(&*connection);
     match users_result {
       Ok(user_list) => {
         let json_users_result = serde_json::to_string(&user_list);
@@ -46,7 +46,7 @@ impl UsersController {
             (state, response)
           },
           Err(err) => {
-            error!(self.logger, "Error converting users to json."; "err" => ?err); // TODO: Add trace id
+            error!(logger, "Error converting users to json."; "err" => ?err); // TODO: Add trace id
             let response = create_response(
               &state,
               StatusCode::InternalServerError,
@@ -57,7 +57,7 @@ impl UsersController {
         }
       },
       Err(err) => {
-        error!(self.logger, "Error loading users."; "err" => ?err); // TODO: Add trace id
+        error!(logger, "Error loading users."; "err" => ?err); // TODO: Add trace id
         let response = create_response(
           &state,
           StatusCode::InternalServerError,
@@ -68,10 +68,11 @@ impl UsersController {
     }
   }
 
-  pub fn show(&self, mut state: State) -> (State, Response) {
-    let connection = self.connection();
+  pub fn show(mut state: State) -> (State, Response) {
+    let connection = UsersController::connection(&state);
+    let logger = UsersController::logger(&state);
     let UserPathParams { id: user_id } = UserPathParams::take_from(&mut state);
-    let user_response = users.find(&user_id).first::<User>(&connection);
+    let user_response = users.find(&user_id).first::<User>(&*connection);
     match user_response {
       Ok(user) => {
         let user_json_result = serde_json::to_string(&user);
@@ -85,7 +86,7 @@ impl UsersController {
             (state, response)
           },
           Err(err) => {
-            error!(self.logger, "Error converting user to json."; "err" => ?err); // TODO: Add trace id
+            error!(logger, "Error converting user to json."; "err" => ?err); // TODO: Add trace id
             let response = create_response(
               &state,
               StatusCode::InternalServerError,
@@ -96,7 +97,7 @@ impl UsersController {
         }
       },
       Err(err) => {
-        error!(self.logger, "Error loading user."; "err" => ?err, "id" => &user_id); // TODO: Add trace id
+        error!(logger, "Error loading user."; "err" => ?err, "id" => &user_id); // TODO: Add trace id
         match err {
           diesel::result::Error::NotFound => {
             let response = create_response(
@@ -119,7 +120,44 @@ impl UsersController {
     }
   }
 
-  fn connection(&self) -> SqliteConnection {
-    self.database.connection()
+  pub fn create(mut state: State) -> Box<HandlerFuture> {
+    let connection = UsersController::connection(&state);
+    let logger = UsersController::logger(&state);
+    let f = Body::take_from(&mut state)
+      .concat2()
+      .then(move |full_body|
+        match full_body {
+          Ok(valid_body) => {
+            let body = String::from_utf8(valid_body.to_vec()).unwrap();
+            let new_user_data: UserCreateParams = serde_json::from_str(&body)
+              .expect("Failed to parse user from body.");
+            let new_user = User::create(&logger, &*connection, &new_user_data.name);
+            let new_user_json = serde_json::to_string(&new_user).unwrap();
+            info!(logger, "Create request"; "body" => &body, "new_user" => ?new_user);
+            let response = create_response(
+              &state,
+              StatusCode::Ok,
+              Some((new_user_json.into_bytes(), mime::APPLICATION_JSON)),
+            );
+            future::ok((state, response))
+          },
+          Err(err) => {
+            error!(logger, "Error during create"; "err" => ?err);
+            future::err((state, err.into_handler_error()))
+          },
+        }
+      );
+
+    Box::new(f)
+  }
+
+  fn connection(state: &State) -> r2d2::PooledConnection<r2d2_diesel::ConnectionManager<diesel::SqliteConnection>> {
+    let diesel_middleware = DieselMiddleware::borrow_from(&state);
+    diesel_middleware.pool.get().expect("Expected a connection")
+  }
+
+  fn logger(state: &State) -> slog::Logger {
+    let logger_middleware = LoggerMiddleware::borrow_from(&state);
+    logger_middleware.logger.clone()
   }
 }

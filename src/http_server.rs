@@ -7,6 +7,8 @@ use slog;
 
 use configuration::Configuration;
 use database::Database;
+use diesel_middleware::DieselMiddlewareImpl;
+use logger_middleware::LoggerMiddlewareImpl;
 use request_logging_middleware::RequestLoggingMiddleware;
 use users_controller::{UsersController, UserPathParams};
 
@@ -39,22 +41,23 @@ impl HttpServer {
   }
 
   fn router(&self) -> Router {
-    let users_controller = UsersController::new(self.database.clone(), self.logger.clone());
+    let logger_middleware = LoggerMiddlewareImpl::new(self.logger.clone());
     let request_middleware = RequestLoggingMiddleware::new(self.logger.clone());
-    let (chain, pipelines) = single_pipeline(new_pipeline().add(request_middleware).build());
+    let diesel_middleware_impl = DieselMiddlewareImpl::new(self.database.pool().clone());
+    let (chain, pipelines) = single_pipeline(new_pipeline()
+      .add(logger_middleware)
+      .add(request_middleware)
+      .add(diesel_middleware_impl)
+      .build());
     build_router(chain, pipelines, |route| {
       route.scope("/api/v1", |route| {
-        {
-          let users_controller = users_controller.clone();
-          route.get("/users")
-            .to_new_handler(move || Ok(|state| users_controller.index(state)));
-        }
-        {
-          let users_controller = users_controller.clone();
-          route.get("/users/:id")
-            .with_path_extractor::<UserPathParams>()
-            .to_new_handler(move || Ok(|state| users_controller.show(state)));
-        }
+        route.get("/users")
+          .to(UsersController::index);
+        route.get("/users/:id")
+          .with_path_extractor::<UserPathParams>()
+          .to(UsersController::show);
+        route.post("/users")
+          .to(UsersController::create);
       });
     })
   }
