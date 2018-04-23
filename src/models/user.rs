@@ -1,7 +1,6 @@
 use chrono::prelude::{NaiveDateTime, Utc};
 use diesel;
 use diesel::prelude::*;
-use serde_json;
 use slog;
 use uuid::Uuid;
 
@@ -37,5 +36,24 @@ impl User {
         panic!("TODO: Remove panic for User::create");
       }
     }
+  }
+
+  pub fn find(connection: &SqliteConnection, id: &str)
+    -> Result<User, diesel::result::Error>
+  {
+    use schema::users::dsl::users;
+
+    users.find(&id).first::<User>(&*connection)
+  }
+
+  pub fn save(&mut self, connection: &SqliteConnection) -> Result<(), diesel::result::Error> {
+    use schema::users::dsl::*;
+
+    let now = Utc::now().naive_utc();
+    self.updated_at = now;
+    diesel::update(users.find(&self.id))
+      .set((name.eq(&self.name), updated_at.eq(&self.updated_at)))
+      .execute(connection)?;
+    Ok(())
   }
 }
