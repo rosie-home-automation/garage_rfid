@@ -51,13 +51,19 @@ impl HttpServer {
       .build());
     build_router(chain, pipelines, |route| {
       route.scope("/api/v1", |route| {
-        route.get("/users")
-          .to(UsersController::index);
-        route.get("/users/:id")
-          .with_path_extractor::<UserPathParams>()
-          .to(UsersController::show);
-        route.post("/users")
-          .to(UsersController::create);
+        // users endpoints
+        route.scope("/users", |route| {
+          route.get("/") // users - index
+            .to(UsersController::index);
+          route.get("/:id") // users - show
+            .with_path_extractor::<UserPathParams>()
+            .to(UsersController::show);
+          route.post("/") // users - create
+            .to(UsersController::create);
+          route.post("/:id") // users - update
+            .with_path_extractor::<UserPathParams>()
+            .to(UsersController::update);
+        })
       });
     })
   }

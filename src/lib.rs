@@ -26,6 +26,7 @@ extern crate uuid;
 
 pub mod great_manager;
 
+pub mod api;
 pub mod bouncer;
 pub mod errors;
 pub mod configuration;
