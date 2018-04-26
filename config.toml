@@ -1,6 +1,12 @@
 [database]
 url = "garage_rfid.sqlite3"
 
+[garage_door]
+opener_gpio = 4
+sensor_gpio = 5
+open_led_gpio = 27
+closed_led_gpio = 22
+
 [http_server]
 address = "0.0.0.0"
 port = 3000
@@ -19,9 +25,3 @@ red_led_gpio = 25
 wait_timeout_ms = 1000
 read_timeout_ms = 120
 pin_key_timeout_secs = 15
-
-[garage_door]
-opener_gpio = 4
-sensor_gpio = 5
-open_led_gpio = 27
-closed_led_gpio = 22
