@@ -7,6 +7,7 @@ use sysfs_gpio;
 
 use configuration::Configuration;
 use database::Database;
+use gpio_util::GpioUtil;
 use rfid_buffer::RfidBuffer;
 
 #[derive(Debug)]
@@ -94,13 +95,8 @@ impl RfidReader {
     -> sysfs_gpio::AsyncPinPoller
   {
     info!(self.logger, "Setting up gpio"; "pin_num" => pin_num);
-    let pin = sysfs_gpio::Pin::new(pin_num as u64);
+    let pin = GpioUtil::setup_input_pin(pin_num, sysfs_gpio::Edge::FallingEdge);
     let token = mio::Token(value);
-    pin.export().unwrap();
-    thread::sleep(Duration::from_millis(100)); // Delay for sysfs to export the files
-    pin.set_direction(sysfs_gpio::Direction::In).unwrap();
-    pin.set_edge(sysfs_gpio::Edge::FallingEdge).unwrap();
-
     let async_pin_poller = pin.get_async_poller().unwrap();
     poller.register(&async_pin_poller, token, mio::Ready::readable(), mio::PollOpt::edge())
       .unwrap();

@@ -22,6 +22,7 @@ extern crate slog;
 extern crate slog_async;
 extern crate slog_term;
 extern crate sysfs_gpio;
+extern crate tokio_core;
 extern crate uuid;
 
 pub mod great_manager;
@@ -33,6 +34,7 @@ pub mod database;
 pub mod diesel_middleware;
 pub mod errors;
 pub mod garage_door;
+pub mod gpio_util;
 pub mod http_server;
 pub mod key_mapper;
 pub mod logger_middleware;

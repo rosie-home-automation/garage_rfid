@@ -5,6 +5,7 @@ use gotham::pipeline::new_pipeline;
 use gotham::pipeline::single::single_pipeline;
 use slog;
 
+use api::garage_door_controller::GarageDoorController;
 use configuration::Configuration;
 use database::Database;
 use diesel_middleware::DieselMiddlewareImpl;
@@ -63,6 +64,16 @@ impl HttpServer {
           route.post("/:id") // users - update
             .with_path_extractor::<UserPathParams>()
             .to(UsersController::update);
+        });
+        route.scope("/garage_door", |route| {
+          route.get("/") // garage_door - show
+            .to(GarageDoorController::show);
+          route.post("/toggle") // garage_door - toggle
+            .to(GarageDoorController::toggle);
+          route.post("/open") // garage_door - open
+            .to(GarageDoorController::open);
+          route.post("/close") // garage_door - close
+            .to(GarageDoorController::close)
         })
       });
     })
