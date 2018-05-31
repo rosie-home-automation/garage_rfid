@@ -34,6 +34,7 @@ pub mod database;
 pub mod diesel_middleware;
 pub mod errors;
 pub mod garage_door;
+pub mod garage_door_middleware;
 pub mod gpio_util;
 pub mod http_server;
 pub mod key_mapper;

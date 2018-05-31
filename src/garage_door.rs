@@ -15,9 +15,6 @@ pub struct GarageDoor {
   open_led_gpio: usize,
   closed_led_gpio: usize,
   async_pin_pollers: Vec<sysfs_gpio::AsyncPinPoller>,
-  tx: mpsc::Sender<u8>,
-  rx: mpsc::Receiver<u8>,
-  rx_timeout_ms: Duration,
   logger: slog::Logger,
   tmp_status: bool,
 }
@@ -29,17 +26,12 @@ impl GarageDoor {
     let open_led_gpio = configuration.garage_door.open_led_gpio;
     let closed_led_gpio = configuration.garage_door.closed_led_gpio;
     let async_pin_pollers = Vec::new();
-    let (tx, rx): (mpsc::Sender<u8>, mpsc::Receiver<u8>) = mpsc::channel();
-    let rx_timeout_ms = Duration::from_millis(1000);
     let mut garage_door = GarageDoor {
       sensor_gpio: sensor_gpio,
       opener_gpio: opener_gpio,
       open_led_gpio: open_led_gpio,
       closed_led_gpio: closed_led_gpio,
       async_pin_pollers: async_pin_pollers,
-      tx: tx,
-      rx: rx,
-      rx_timeout_ms: rx_timeout_ms,
       logger: logger,
       tmp_status: false,
     };
@@ -68,19 +60,6 @@ impl GarageDoor {
     //     l.turn(None)
     //   }
     // });
-    loop {
-      match self.rx.recv_timeout(self.rx_timeout_ms) {
-        Ok(data) => {
-          info!(self.logger, "RX OK"; "data" => ?data);
-        },
-        Err(mpsc::RecvTimeoutError::Timeout) => {
-          info!(self.logger, "RX TIMEOUT");
-        },
-        Err(err) => {
-          error!(self.logger, "Buffer Error"; "err" => format!("{:?}", err));
-        }
-      }
-    }
   }
 
   pub fn status(&self) -> String {

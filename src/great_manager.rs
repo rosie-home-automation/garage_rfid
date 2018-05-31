@@ -1,5 +1,6 @@
 use config;
 use slog;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -13,7 +14,7 @@ use rfid_reader::RfidReader;
 pub struct GreatManager {
   pub configuration: Configuration,
   pub database: Database,
-  pub garage_door: GarageDoor,
+  pub garage_door: Arc<Mutex<GarageDoor>>,
   pub http_server: HttpServer,
   pub rfid_reader: RfidReader,
   pub root_logger: RootLogger,
@@ -27,8 +28,14 @@ impl GreatManager {
     info!(logger, "Initializing...");
     let database = Database::new(logger.clone(), &configuration);
     let garage_door = GarageDoor::new(logger.clone(), &configuration);
+    let garage_door = Arc::new(Mutex::new(garage_door));
     let rfid_reader = RfidReader::new(logger.clone(), &configuration, database.clone());
-    let http_server = HttpServer::new(&configuration, database.clone(), logger.clone());
+    let http_server = HttpServer::new(
+      &configuration,
+      database.clone(),
+      logger.clone(),
+      garage_door.clone(),
+    );
     info!(logger, "Initialized");
     Ok(GreatManager {
       configuration: configuration,
@@ -42,7 +49,7 @@ impl GreatManager {
 
   pub fn start(&mut self) {
     info!(self.root_logger(), "Starting...");
-    self.garage_door.start();
+    self.garage_door.lock().unwrap().start();
     self.rfid_reader.start();
     self.http_server.start();
     loop {
