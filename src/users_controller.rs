@@ -6,15 +6,11 @@ use gotham::handler::{HandlerFuture, IntoHandlerError};
 use futures::{future, Future, Stream};
 use hyper::{self, Body, Response, StatusCode};
 use mime;
-use r2d2;
-use r2d2_diesel;
 use serde_json;
-use slog;
 use std;
 
+use api::controller_helper::ControllerHelper;
 use api::users_update_action::UsersUpdateAction;
-use diesel_middleware::DieselMiddleware;
-use logger_middleware::LoggerMiddleware;
 use models::user::User;
 use schema::users::dsl::users;
 
@@ -50,8 +46,8 @@ pub struct UsersController;
 
 impl UsersController {
   pub fn index(state: State) -> (State, Response) {
-    let connection = UsersController::connection(&state);
-    let logger = UsersController::logger(&state);
+    let connection = ControllerHelper::connection(&state);
+    let logger = ControllerHelper::logger(&state);
     let users_result = users.load::<User>(&*connection);
     match users_result {
       Ok(user_list) => {
@@ -89,8 +85,8 @@ impl UsersController {
   }
 
   pub fn show(mut state: State) -> (State, Response) {
-    let connection = UsersController::connection(&state);
-    let logger = UsersController::logger(&state);
+    let connection = ControllerHelper::connection(&state);
+    let logger = ControllerHelper::logger(&state);
     let UserPathParams { id } = UserPathParams::take_from(&mut state);
     let user_response = users.find(&id).first::<User>(&*connection);
     match user_response {
@@ -141,8 +137,8 @@ impl UsersController {
   }
 
   pub fn create(mut state: State) -> Box<HandlerFuture> {
-    let connection = UsersController::connection(&state);
-    let logger = UsersController::logger(&state);
+    let connection = ControllerHelper::connection(&state);
+    let logger = ControllerHelper::logger(&state);
     let f = Body::take_from(&mut state)
       .concat2()
       .then(move |full_body|
@@ -172,8 +168,8 @@ impl UsersController {
   }
 
   pub fn update(mut state: State) -> Box<HandlerFuture> {
-    let connection = UsersController::connection(&state);
-    let logger = UsersController::logger(&state);
+    let connection = ControllerHelper::connection(&state);
+    let logger = ControllerHelper::logger(&state);
     let UserPathParams { id } = UserPathParams::take_from(&mut state);
     let f = Body::take_from(&mut state)
       .concat2()
@@ -219,16 +215,6 @@ impl UsersController {
       );
 
     Box::new(f)
-  }
-
-  fn connection(state: &State) -> r2d2::PooledConnection<r2d2_diesel::ConnectionManager<diesel::SqliteConnection>> {
-    let diesel_middleware = DieselMiddleware::borrow_from(&state);
-    diesel_middleware.pool.get().expect("Expected a connection")
-  }
-
-  fn logger(state: &State) -> slog::Logger {
-    let logger_middleware = LoggerMiddleware::borrow_from(&state);
-    logger_middleware.logger.clone()
   }
 
   // fn json_body_string(full_body: hyper::Chunk)
