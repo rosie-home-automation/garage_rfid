@@ -7,6 +7,7 @@ use sysfs_gpio;
 
 use configuration::Configuration;
 use database::Database;
+use garage_door::GarageDoor;
 use gpio_util::GpioUtil;
 use rfid_buffer::RfidBuffer;
 use slacker::Slacker;
@@ -21,6 +22,7 @@ pub struct RfidReader {
   read_timeout_ms: usize,
   pin_key_timeout_secs: usize,
   async_pin_pollers: Vec<sysfs_gpio::AsyncPinPoller>,
+  garage_door: Arc<Mutex<GarageDoor>>,
   slacker: Arc<Mutex<Slacker>>,
   logger: slog::Logger,
   database: Database,
@@ -31,6 +33,7 @@ impl RfidReader {
     logger: slog::Logger,
     configuration: &Configuration,
     database: Database,
+    garage_door: Arc<Mutex<GarageDoor>>,
     slacker: Arc<Mutex<Slacker>>,
   )
     -> RfidReader
@@ -54,6 +57,7 @@ impl RfidReader {
       async_pin_pollers,
       logger: logger,
       database,
+      garage_door: garage_door,
       slacker: slacker,
     };
     rfid_reader.setup_logger();
@@ -74,6 +78,7 @@ impl RfidReader {
     let (tx, rx): (mpsc::Sender<u8>, mpsc::Receiver<u8>) = mpsc::channel();
     let logger = self.logger.clone();
     let database = self.database.clone();
+    let garage_door = self.garage_door.clone();
     let slacker = self.slacker.clone();
     let _buffer_thread = thread::spawn(move || {
       let mut rfid_buffer = RfidBuffer::new(
@@ -83,6 +88,7 @@ impl RfidReader {
         wait_timeout_ms,
         read_timeout_ms,
         pin_key_timeout_secs,
+        garage_door,
         slacker,
       );
       rfid_buffer.start();

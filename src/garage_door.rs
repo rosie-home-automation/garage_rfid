@@ -116,22 +116,22 @@ impl GarageDoor {
   }
 
   pub fn open(&self) {
-    info!(self.logger, "Open triggered.");
     if !self.is_open() {
       self.trigger_opener();
+      info!(self.logger, "Open triggered.");
     }
   }
 
   pub fn close(&self) {
-    info!(self.logger, "Close triggered.");
     if self.is_open() {
       self.trigger_opener();
+      info!(self.logger, "Close triggered.");
     }
   }
 
   pub fn toggle(&self) {
-    info!(self.logger, "Toggle triggered.");
     self.trigger_opener();
+    info!(self.logger, "Toggle triggered.");
   }
 
   fn trigger_opener(&self) {

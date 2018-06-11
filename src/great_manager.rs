@@ -32,7 +32,13 @@ impl GreatManager {
     let slacker = Arc::new(Mutex::new(Slacker::new(&configuration, logger.clone())));
     let garage_door = GarageDoor::new(logger.clone(), &configuration, slacker.clone());
     let garage_door = Arc::new(Mutex::new(garage_door));
-    let rfid_reader = RfidReader::new(logger.clone(), &configuration, database.clone(), slacker.clone());
+    let rfid_reader = RfidReader::new(
+      logger.clone(),
+      &configuration,
+      database.clone(),
+      garage_door.clone(),
+      slacker.clone()
+    );
     let http_server = HttpServer::new(
       &configuration,
       database.clone(),

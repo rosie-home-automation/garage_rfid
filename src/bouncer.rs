@@ -50,10 +50,8 @@ impl Bouncer {
           "module" => "Bouncer", "action" => "is_authorized", "status" => "approved",
           "variety" => ?variety, "credential" => ?credential
         );
-        self.slacker.lock().unwrap().send_text(
-          format!("Bouncer approved {variety} {name}.", name = &credential.name, variety = &variety).as_str(),
-          logger
-        );
+        let text = format!("Bouncer approved {variety} {name}.", name = &credential.name, variety = &variety);
+        self.send_slack_text(text, logger);
         Ok(true)
       },
       None => {
@@ -63,13 +61,15 @@ impl Bouncer {
           "module" => "Bouncer", "action" => "is_authorized", "status" => "denied",
           "variety" => ?variety, "value" => value
         );
-        self.slacker.lock().unwrap().send_text(
-          format!("Bouncer denied {variety} {value}.", variety = &variety, value = &value).as_str(),
-          logger
-        );
+        let text = format!("Bouncer denied {variety} {value}.", variety = &variety, value = &value);
+        self.send_slack_text(text, logger);
         Ok(false)
       },
     }
+  }
+
+  fn send_slack_text(&self, text: String, logger: slog::Logger) {
+    self.slacker.lock().unwrap().send_text(text.as_str(), logger);
   }
 }
 
