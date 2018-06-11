@@ -37,18 +37,27 @@ pub struct RfidReaderConfiguration {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct SlackConfiguration {
+  pub channel: String,
+  pub username: String,
+  pub webhook_url: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Configuration {
   pub database: DatabaseConfiguration,
   pub logging: LoggingConfiguration,
   pub garage_door: GarageDoorConfiguration,
   pub http_server: HttpServerConfiguration,
-  pub rfid_reader: RfidReaderConfiguration
+  pub rfid_reader: RfidReaderConfiguration,
+  pub slack: SlackConfiguration,
 }
 
 impl Configuration {
   pub fn new() -> Result<Self, ConfigError> {
     let mut configuration = Config::new();
-    configuration.merge(File::with_name("config"))?;
+    configuration.merge(File::with_name("config/default"))?;
+    configuration.merge(File::with_name("config/local").required(false))?;
     configuration.try_into()
   }
 }

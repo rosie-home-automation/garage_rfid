@@ -23,3 +23,8 @@ red_led_gpio = 25
 wait_timeout_ms = 1000
 read_timeout_ms = 120
 pin_key_timeout_secs = 15
+
+[slack]
+channel = "#general"
+username = "GarageBot"
+webhook_url = "https://hooks.slack.com/services/xxxxxx/yyyyyy/zzzzzzzzzzzzz"
