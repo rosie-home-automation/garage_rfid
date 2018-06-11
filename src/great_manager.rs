@@ -10,6 +10,7 @@ use garage_door::GarageDoor;
 use http_server::HttpServer;
 use root_logger::RootLogger;
 use rfid_reader::RfidReader;
+use slacker::Slacker;
 
 pub struct GreatManager {
   pub configuration: Configuration,
@@ -18,6 +19,7 @@ pub struct GreatManager {
   pub http_server: HttpServer,
   pub rfid_reader: RfidReader,
   pub root_logger: RootLogger,
+  pub slacker: Arc<Mutex<Slacker>>,
 }
 
 impl GreatManager {
@@ -27,9 +29,10 @@ impl GreatManager {
     let logger = root_logger.root_logger.clone();
     info!(logger, "Initializing...");
     let database = Database::new(logger.clone(), &configuration);
-    let garage_door = GarageDoor::new(logger.clone(), &configuration);
+    let slacker = Arc::new(Mutex::new(Slacker::new(&configuration, logger.clone())));
+    let garage_door = GarageDoor::new(logger.clone(), &configuration, slacker.clone());
     let garage_door = Arc::new(Mutex::new(garage_door));
-    let rfid_reader = RfidReader::new(logger.clone(), &configuration, database.clone());
+    let rfid_reader = RfidReader::new(logger.clone(), &configuration, database.clone(), slacker.clone());
     let http_server = HttpServer::new(
       &configuration,
       database.clone(),
@@ -44,6 +47,7 @@ impl GreatManager {
       http_server: http_server,
       rfid_reader: rfid_reader,
       root_logger: root_logger,
+      slacker: slacker,
     })
   }
 

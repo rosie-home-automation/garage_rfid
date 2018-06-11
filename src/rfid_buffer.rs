@@ -1,11 +1,12 @@
 use diesel;
 use slog;
-use std::sync::mpsc;
+use std::sync::{ mpsc, Arc, Mutex };
 use std::time::{ Duration, Instant };
 
 use bouncer::{ Bouncer, Variety };
 use database::Database;
 use key_mapper::KeyMapper;
+use slacker::Slacker;
 
 #[derive(Debug)]
 pub struct RfidBuffer<'a> {
@@ -30,6 +31,7 @@ impl<'a> RfidBuffer<'a> {
     wait_timeout_ms: usize,
     read_timeout_ms: usize,
     pin_key_timeout_secs: usize,
+    slacker: Arc<Mutex<Slacker>>,
   ) -> RfidBuffer<'a> {
     let bit_buffer =  Vec::new();
     let pin_key_buffer = Vec::new();
@@ -39,7 +41,7 @@ impl<'a> RfidBuffer<'a> {
     let read_timeout = Duration::from_millis(read_timeout_ms as u64);
     let pin_key_timeout = Duration::from_secs(pin_key_timeout_secs as u64);
     let connection = database.connection();
-    let bouncer = Bouncer::new(connection);
+    let bouncer = Bouncer::new(connection, slacker.clone());
     let mut rfid_buffer = RfidBuffer {
       rx: rx,
       bit_buffer: bit_buffer,

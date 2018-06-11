@@ -17,6 +17,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate slack_hook;
 #[macro_use]
 extern crate slog;
 extern crate slog_async;
@@ -45,4 +46,5 @@ pub mod rfid_buffer;
 pub mod rfid_reader;
 pub mod root_logger;
 pub mod schema;
+pub mod slacker;
 pub mod users_controller;
