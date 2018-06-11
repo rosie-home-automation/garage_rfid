@@ -13,24 +13,25 @@ A rust implementation of the garage/RFID controller.
 - [ ] Use bcrypt to encrypt credential values
 - [ ] Implement API
   - [x] Users#index
-  - [ ] Users#show
-  - [ ] Users#create
-  - [ ] Users#update
-  - [ ] Users#destroy
+  - [x] Users#show
+  - [x] Users#create
+  - [x] Users#update
+  - [x] Users#destroy
   - [ ] Credentials#index
   - [ ] Credentials#show
   - [ ] Credentials#create
   - [ ] Credentials#update
   - [ ] Credentials#destroy
-  - [ ] GarageDoor#show
-  - [ ] GarageDoor#toggle
-  - [ ] GarageDoor#open
-  - [ ] GarageDoor#close
+  - [x] GarageDoor#show
+  - [x] GarageDoor#toggle
+  - [x] GarageDoor#open
+  - [x] GarageDoor#close
 - [ ] Many refactors...
-  - [ ] R2D2
+  - [x] R2D2
     - https://github.com/diesel-rs/r2d2-diesel/blob/master/examples/sqlite.rs
     - https://github.com/gotham-rs/gotham/pull/198/files
   - [ ] Check out tokio instead of mio for RfidReader
+  - [ ] Check out [actix-web](https://github.com/actix/actix-web) instead of [Gotham](https://github.com/gotham-rs/gotham)
 
 
 ## Resources
