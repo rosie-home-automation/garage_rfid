@@ -5,6 +5,7 @@ use std::time::{ Duration, Instant };
 
 use bouncer::{ Bouncer, Variety };
 use database::Database;
+use garage_door::GarageDoor;
 use key_mapper::KeyMapper;
 use slacker::Slacker;
 
@@ -20,6 +21,7 @@ pub struct RfidBuffer<'a> {
   pin_key_timeout: Duration,
   bouncer: Bouncer,
   database: Database,
+  garage_door: Arc<Mutex<GarageDoor>>,
   logger: slog::Logger,
 }
 
@@ -31,6 +33,7 @@ impl<'a> RfidBuffer<'a> {
     wait_timeout_ms: usize,
     read_timeout_ms: usize,
     pin_key_timeout_secs: usize,
+    garage_door: Arc<Mutex<GarageDoor>>,
     slacker: Arc<Mutex<Slacker>>,
   ) -> RfidBuffer<'a> {
     let bit_buffer =  Vec::new();
@@ -53,6 +56,7 @@ impl<'a> RfidBuffer<'a> {
       pin_key_timeout: pin_key_timeout,
       bouncer: bouncer,
       database: database,
+      garage_door: garage_door,
       logger: logger
     };
     rfid_buffer.setup_logger();
@@ -136,7 +140,7 @@ impl<'a> RfidBuffer<'a> {
   fn process_authorization(&mut self, result: Result<bool, diesel::result::Error>) {
     match result {
       Ok(true) => {
-        info!(self.logger, "TODO: Open the garage door!");
+        self.garage_door.lock().unwrap().toggle();
       },
       Err(err) => {
         error!(self.logger, "Error authorizing!"; "err" => ?err);
