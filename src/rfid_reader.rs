@@ -2,13 +2,14 @@ use mio;
 use slog;
 use std::thread;
 use std::time::Duration;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
 use sysfs_gpio;
 
 use configuration::Configuration;
 use database::Database;
 use gpio_util::GpioUtil;
 use rfid_buffer::RfidBuffer;
+use slacker::Slacker;
 
 #[derive(Debug)]
 pub struct RfidReader {
@@ -20,12 +21,18 @@ pub struct RfidReader {
   read_timeout_ms: usize,
   pin_key_timeout_secs: usize,
   async_pin_pollers: Vec<sysfs_gpio::AsyncPinPoller>,
+  slacker: Arc<Mutex<Slacker>>,
   logger: slog::Logger,
   database: Database,
 }
 
 impl RfidReader {
-  pub fn new(logger: slog::Logger, configuration: &Configuration, database: Database)
+  pub fn new(
+    logger: slog::Logger,
+    configuration: &Configuration,
+    database: Database,
+    slacker: Arc<Mutex<Slacker>>,
+  )
     -> RfidReader
   {
     let data_0_gpio = configuration.rfid_reader.data_0_gpio;
@@ -47,6 +54,7 @@ impl RfidReader {
       async_pin_pollers,
       logger: logger,
       database,
+      slacker: slacker,
     };
     rfid_reader.setup_logger();
     rfid_reader
@@ -66,6 +74,7 @@ impl RfidReader {
     let (tx, rx): (mpsc::Sender<u8>, mpsc::Receiver<u8>) = mpsc::channel();
     let logger = self.logger.clone();
     let database = self.database.clone();
+    let slacker = self.slacker.clone();
     let _buffer_thread = thread::spawn(move || {
       let mut rfid_buffer = RfidBuffer::new(
         logger,
@@ -74,6 +83,7 @@ impl RfidReader {
         wait_timeout_ms,
         read_timeout_ms,
         pin_key_timeout_secs,
+        slacker,
       );
       rfid_buffer.start();
     });

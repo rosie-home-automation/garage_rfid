@@ -2,10 +2,12 @@ use diesel;
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 use std::fmt;
+use std::sync::{Arc, Mutex};
 use slog;
 
 use models::credential::Credential;
 use schema::credentials;
+use slacker::Slacker;
 
 #[derive(Debug)]
 pub enum Variety {
@@ -19,12 +21,16 @@ impl fmt::Display for Variety {
 }
 
 pub struct Bouncer {
-  connection: SqliteConnection
+  connection: SqliteConnection,
+  slacker: Arc<Mutex<Slacker>>,
 }
 
 impl Bouncer {
-  pub fn new(connection: SqliteConnection) -> Bouncer {
-    Bouncer { connection: connection }
+  pub fn new(connection: SqliteConnection, slacker: Arc<Mutex<Slacker>>) -> Bouncer {
+    Bouncer {
+      connection: connection,
+      slacker: slacker,
+    }
   }
 
   pub fn is_authorized(&self, logger: slog::Logger, variety: Variety, value: &str)
@@ -44,6 +50,10 @@ impl Bouncer {
           "module" => "Bouncer", "action" => "is_authorized", "status" => "approved",
           "variety" => ?variety, "credential" => ?credential
         );
+        self.slacker.lock().unwrap().send_text(
+          format!("Bouncer approved {variety} {name}.", name = &credential.name, variety = &variety).as_str(),
+          logger
+        );
         Ok(true)
       },
       None => {
@@ -52,6 +62,10 @@ impl Bouncer {
           "Bouncer denied.";
           "module" => "Bouncer", "action" => "is_authorized", "status" => "denied",
           "variety" => ?variety, "value" => value
+        );
+        self.slacker.lock().unwrap().send_text(
+          format!("Bouncer denied {variety} {value}.", variety = &variety, value = &value).as_str(),
+          logger
         );
         Ok(false)
       },

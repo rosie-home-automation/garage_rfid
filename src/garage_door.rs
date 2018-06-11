@@ -1,7 +1,7 @@
 use futures::{Future, Stream};
 use slog;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use sysfs_gpio;
@@ -9,6 +9,7 @@ use tokio_core::reactor::Core;
 
 use configuration::Configuration;
 use gpio_util::GpioUtil;
+use slacker::Slacker;
 
 #[derive(Debug)]
 pub struct GarageDoor {
@@ -20,12 +21,15 @@ pub struct GarageDoor {
   opener: sysfs_gpio::Pin,
   open_led: Arc<sysfs_gpio::Pin>,
   closed_led: Arc<sysfs_gpio::Pin>,
+  slacker: Arc<Mutex<Slacker>>,
   logger: slog::Logger,
   is_open: Arc<AtomicBool>,
 }
 
 impl GarageDoor {
-  pub fn new(logger: slog::Logger, configuration: &Configuration) -> Self {
+  pub fn new(logger: slog::Logger, configuration: &Configuration, slacker: Arc<Mutex<Slacker>>)
+    -> Self
+  {
     let sensor_gpio = configuration.garage_door.sensor_gpio;
     let opener_gpio = configuration.garage_door.opener_gpio;
     let open_led_gpio = configuration.garage_door.open_led_gpio;
@@ -46,6 +50,7 @@ impl GarageDoor {
       open_led: open_led,
       closed_led: closed_led,
       async_pin_pollers: async_pin_pollers,
+      slacker: slacker,
       logger: logger,
       is_open: is_open,
     };
@@ -63,6 +68,7 @@ impl GarageDoor {
     let is_open = self.is_open.clone();
     let open_led = self.open_led.clone();
     let closed_led = self.closed_led.clone();
+    let slacker = self.slacker.clone();
     let _executor_thread = thread::spawn(move || {
       let mut l = Core::new().expect("New tokio core.");
       let handle = l.handle();
@@ -80,12 +86,14 @@ impl GarageDoor {
             is_open.store(sensor_value, Ordering::Relaxed);
             match sensor_value {
               true => {
-                open_led.set_value(0).unwrap();
-                closed_led.set_value(1).unwrap();
-              },
-              false => {
+                slacker.lock().unwrap().send_text("Garage door opened", logger.clone());
                 open_led.set_value(1).unwrap();
                 closed_led.set_value(0).unwrap();
+              },
+              false => {
+                slacker.lock().unwrap().send_text("Garage door closed", logger.clone());
+                open_led.set_value(0).unwrap();
+                closed_led.set_value(1).unwrap();
               }
             }
           }
