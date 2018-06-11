@@ -523,7 +523,7 @@ dependencies = [
 
 [[package]]
 name = "garage_rfid"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "cargo-edit 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cargo-watch 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
