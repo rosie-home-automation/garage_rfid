@@ -106,7 +106,8 @@ impl<'a> RfidBuffer<'a> {
   fn process_bit_buffer(&mut self) {
     info!(self.logger, "Buffer timeout: trying to match"; "bits" => self.bits());
     if self.bits().len() < 8 {
-      info!(self.logger, "TODO: Ignore if there are less than 8 bits");
+      info!(self.logger, "Ignoring since there are less than 8 bits"; "bits" => self.bits());
+      return;
     }
     match self.key_mapper.key(&self.bits()) {
       Some("#") => {

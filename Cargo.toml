@@ -1,6 +1,6 @@
 [package]
 name = "garage_rfid"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["olson3r <scootles.olson@gmail.com>"]
 
 [features]
