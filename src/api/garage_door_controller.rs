@@ -17,7 +17,7 @@ pub struct Show {
 pub struct GarageDoorController;
 
 impl GarageDoorController {
-  pub fn show(mut state: State) -> (State, Response) {
+  pub fn show(state: State) -> (State, Response) {
     let logger = ControllerHelper::logger(&state);
     let garage_door = ControllerHelper::garage_door(&state);
     let status = garage_door.lock().unwrap().status();
@@ -44,10 +44,10 @@ impl GarageDoorController {
     }
   }
 
-  pub fn toggle(mut state: State) -> (State, Response) {
+  pub fn toggle(state: State) -> (State, Response) {
     let logger = ControllerHelper::logger(&state);
     let garage_door = ControllerHelper::garage_door(&state);
-    let status = garage_door.lock().unwrap().toggle();
+    garage_door.lock().unwrap().toggle();
     let response = create_response(
       &state,
       StatusCode::Ok,
@@ -56,10 +56,10 @@ impl GarageDoorController {
     (state, response)
   }
 
-  pub fn open(mut state: State) -> (State, Response) {
+  pub fn open(state: State) -> (State, Response) {
     let logger = ControllerHelper::logger(&state);
     let garage_door = ControllerHelper::garage_door(&state);
-    let status = garage_door.lock().unwrap().open();
+    garage_door.lock().unwrap().open();
     let response = create_response(
       &state,
       StatusCode::Ok,
@@ -68,10 +68,10 @@ impl GarageDoorController {
     (state, response)
   }
 
-  pub fn close(mut state: State) -> (State, Response) {
+  pub fn close(state: State) -> (State, Response) {
     let logger = ControllerHelper::logger(&state);
     let garage_door = ControllerHelper::garage_door(&state);
-    let status = garage_door.lock().unwrap().close();
+    garage_door.lock().unwrap().close();
     let response = create_response(
       &state,
       StatusCode::Ok,
