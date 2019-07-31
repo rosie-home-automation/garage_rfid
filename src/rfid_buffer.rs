@@ -105,25 +105,23 @@ impl<'a> RfidBuffer<'a> {
 
   fn process_bit_buffer(&mut self) {
     info!(self.logger, "Buffer timeout: trying to match"; "bits" => self.bits());
-    if self.bits().len() < 8 {
-      info!(self.logger, "Ignoring since there are less than 8 bits"; "bits" => self.bits());
-      return;
-    }
-    match self.key_mapper.key(&self.bits()) {
-      Some("#") => {
-        self.authorize_pin();
-      },
-      Some("*") => {
-        self.clear_pin_key_buffer();
-      },
-      Some(pin_key) => {
-        self.add_pin_key(pin_key);
-      },
-      None => {
-        self.authorize_rfid();
+    if self.valid_buffer() {
+      match self.key_mapper.key(&self.bits()) {
+        Some("#") => {
+          self.authorize_pin();
+        },
+        Some("*") => {
+          self.clear_pin_key_buffer();
+        },
+        Some(pin_key) => {
+          self.add_pin_key(pin_key);
+        },
+        None => {
+          self.authorize_rfid();
+        }
       }
+      self.clear_bit_buffer();
     }
-    self.clear_bit_buffer();
   }
 
   fn authorize_pin(&mut self) {
@@ -186,7 +184,38 @@ impl<'a> RfidBuffer<'a> {
     self.pin_key_buffer.clear();
   }
 
+  fn valid_buffer(&self) -> bool {
+    let length = self.bits().len();
+    let even_bits = RfidBuffer::even_bits(length);
+    let odd_bits = RfidBuffer::odd_bits(length);
+    match self.bits() {
+      ref x if length < 8 => {
+        info!(self.logger, "Ignoring since there are less than 8 bits"; "bits" => x);
+        false
+      },
+      ref x if x == &even_bits => {
+        info!(self.logger, "Ignoring since the bits are cycling"; "bits" => x, "cycle" => "even");
+        false
+      },
+      ref x if x == &odd_bits => {
+        info!(self.logger, "Ignoring since the bits are cycling"; "bits" => x, "cycle" => "even");
+        false
+      },
+      _ => true
+    }
+  }
+
   fn setup_logger(&mut self) {
     self.logger = self.logger.new(o!("rfid_buffer" => format!("{:?}", self)));
+  }
+
+  fn even_bits(len: usize) -> String {
+    let values = ["0", "1"];
+    values.iter().cloned().cycle().take(len).collect()
+  }
+
+  fn odd_bits(len: usize) -> String {
+    let values = ["1", "0"];
+    values.iter().cloned().cycle().take(len).collect()
   }
 }
