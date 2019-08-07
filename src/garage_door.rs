@@ -1,5 +1,7 @@
+use bus;
 use futures::{Future, Stream};
 use slog;
+use std::fmt::{ Debug, Formatter, Result };
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -11,7 +13,6 @@ use configuration::Configuration;
 use gpio_util::GpioUtil;
 use slacker::Slacker;
 
-#[derive(Debug)]
 pub struct GarageDoor {
   sensor_gpio: usize,
   opener_gpio: usize,
@@ -24,6 +25,17 @@ pub struct GarageDoor {
   slacker: Arc<Mutex<Slacker>>,
   logger: slog::Logger,
   is_open: Arc<AtomicBool>,
+  bus: Arc<Mutex<bus::Bus<String>>>,
+}
+
+impl Debug for GarageDoor {
+  fn fmt(&self, f: &mut Formatter) -> Result {
+    write!(
+      f,
+      "GarageDoor {{ sensor_gpio: {}, opener: {:?}, open_led: {:?}, closed_led: {:?}, slacker: {:?} }}",
+      &self.sensor_gpio, &self.opener, &self.open_led, &self.closed_led, &self.slacker
+    )
+  }
 }
 
 impl GarageDoor {
@@ -41,6 +53,8 @@ impl GarageDoor {
     let closed_led = Arc::new(closed_led);
     let async_pin_pollers = Vec::new();
     let is_open = Arc::new(AtomicBool::new(true));
+    let bus = bus::Bus::new(10);
+    let bus = Arc::new(Mutex::new(bus));
     let mut garage_door = GarageDoor {
       sensor_gpio: sensor_gpio,
       opener_gpio: opener_gpio,
@@ -53,6 +67,7 @@ impl GarageDoor {
       slacker: slacker,
       logger: logger,
       is_open: is_open,
+      bus: bus,
     };
     garage_door.setup_logger();
     garage_door
@@ -62,6 +77,10 @@ impl GarageDoor {
     self.setup_sensor();
   }
 
+  pub fn subscribe(&self) -> bus::BusReader<String> {
+    self.bus.lock().unwrap().add_rx()
+  }
+
   fn setup_sensor(&self) {
     let sensor_gpio = self.sensor_gpio;
     let logger = self.logger.clone();
@@ -69,13 +88,14 @@ impl GarageDoor {
     let open_led = self.open_led.clone();
     let closed_led = self.closed_led.clone();
     let slacker = self.slacker.clone();
+    let bus = self.bus.clone();
     let _executor_thread = thread::spawn(move || {
       let mut l = Core::new().expect("New tokio core.");
       let handle = l.handle();
       let is_open = is_open.clone();
       info!(logger, "Setting up sensor gpio"; "sensor_gpio" => sensor_gpio);
       let sensor_pin = GpioUtil::setup_input_pin(sensor_gpio, sysfs_gpio::Edge::BothEdges);
-      handle.spawn(sensor_pin.get_value_stream(&handle)
+      handle.spawn(sensor_pin.get_value_stream()
         .expect("Expected to get sensor pin value stream.")
         .for_each(move |raw_sensor_value| {
           let sensor_value = raw_sensor_value == 1;
@@ -87,11 +107,13 @@ impl GarageDoor {
             match sensor_value {
               true => {
                 slacker.lock().unwrap().send_text("Garage door opened", logger.clone());
+                bus.lock().unwrap().broadcast("opened".to_string());
                 open_led.set_value(1).unwrap();
                 closed_led.set_value(0).unwrap();
               },
               false => {
                 slacker.lock().unwrap().send_text("Garage door closed", logger.clone());
+                bus.lock().unwrap().broadcast("closed".to_string());
                 open_led.set_value(0).unwrap();
                 closed_led.set_value(1).unwrap();
               }
@@ -144,7 +166,7 @@ impl GarageDoor {
     self.logger = self.logger.new(o!("garage_door" => format!("{:?}", self)));
   }
 
-  fn is_open(&self) -> bool {
+  pub fn is_open(&self) -> bool {
     self.is_open.load(Ordering::Relaxed)
   }
 }
