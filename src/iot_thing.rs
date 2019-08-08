@@ -58,6 +58,7 @@ impl IotThing {
       server.start();
     });
     let mut garage_door_rx = self.subscribe_garage_door();
+    let thing = self.thing.clone();
     let _rx_thread = thread::spawn(move || {
       'read_rx_loop: loop {
         let message = match garage_door_rx.recv() {
@@ -65,6 +66,27 @@ impl IotThing {
           _ => "Failed to receive".to_string(),
         };
         println!("IOT RX {}", message);
+        match message.as_ref() {
+          "opened" => {
+            let value = json!(true);
+            {
+              let mut thing = thing.write().unwrap();
+              let prop = thing.find_property("open".to_owned()).unwrap();
+              prop.set_value(value.clone());
+            }
+            thing.write().unwrap().property_notify("open".to_owned(), value);
+          },
+          "closed" => {
+            let value = json!(false);
+            {
+              let mut thing = thing.write().unwrap();
+              let prop = thing.find_property("open".to_owned()).unwrap();
+              prop.set_value(value.clone());
+            }
+            thing.write().unwrap().property_notify("open".to_owned(), value);
+          },
+          _ => {},
+        }
       }
     });
   }
