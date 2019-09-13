@@ -8,7 +8,7 @@ use configuration::Configuration;
 use database::Database;
 use garage_door::GarageDoor;
 // use http_server::HttpServer;
-use iot_thing::IotThing;
+use iot::iot_thing::IotThing;
 use root_logger::RootLogger;
 use rfid_reader::RfidReader;
 use slacker::Slacker;

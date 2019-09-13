@@ -12,6 +12,8 @@ extern crate futures;
 extern crate hyper;
 extern crate mime;
 extern crate mio;
+#[macro_use]
+extern crate nanoid;
 extern crate r2d2;
 extern crate r2d2_diesel;
 extern crate serde;
@@ -42,7 +44,7 @@ pub mod garage_door;
 // pub mod garage_door_middleware;
 pub mod gpio_util;
 // pub mod http_server;
-pub mod iot_thing;
+pub mod iot;
 pub mod key_mapper;
 // pub mod logger_middleware;
 pub mod models;

@@ -1,12 +1,23 @@
 use bus;
+use serde_json;
 use std::sync::{ Arc, Mutex, RwLock, Weak };
 use std::thread;
 use webthing;
 use webthing::Thing;
 
 use garage_door::GarageDoor;
+use iot::close_action::CloseAction;
+use iot::garage_door_event::GarageDoorEvent;
 
-struct Generator;
+struct Generator {
+  ttt: String,
+}
+
+impl Generator {
+  pub fn new(ttt: String) -> Generator {
+    Generator { ttt: ttt }
+  }
+}
 
 impl webthing::server::ActionGenerator for Generator {
   fn generate(
@@ -25,7 +36,7 @@ impl webthing::server::ActionGenerator for Generator {
 
     let name: &str = &name;
     match name {
-      // "fade" => Some(Box::new(FadeAction::new(input, thing))),
+      "close" => Some(Box::new(CloseAction::new(input, thing))),
       _ => None,
     }
   }
@@ -50,7 +61,7 @@ impl IotThing {
         Some(8888),
         None,
         None,
-        Box::new(Generator),
+        Box::new(Generator::new("hello".to_string())),
         None,
         None,
       );
@@ -65,30 +76,36 @@ impl IotThing {
           Ok(msg) => msg,
           _ => "Failed to receive".to_string(),
         };
-        println!("IOT RX {}", message);
         match message.as_ref() {
-          "opened" => {
-            let value = json!(true);
-            {
-              let mut thing = thing.write().unwrap();
-              let prop = thing.find_property("open".to_owned()).unwrap();
-              prop.set_value(value.clone());
-            }
-            thing.write().unwrap().property_notify("open".to_owned(), value);
-          },
-          "closed" => {
-            let value = json!(false);
-            {
-              let mut thing = thing.write().unwrap();
-              let prop = thing.find_property("open".to_owned()).unwrap();
-              prop.set_value(value.clone());
-            }
-            thing.write().unwrap().property_notify("open".to_owned(), value);
-          },
+          "opened" => IotThing::set_open(true, thing.clone()),
+          "closed" => IotThing::set_open(false, thing.clone()),
           _ => {},
         }
       }
     });
+  }
+
+  // pub fn broadcast_action(action: String) {
+  //   let action : &str = &action;
+  //   match action {
+  //     "close" => { println!("CLOSE ACTION!!!") }
+  //   }
+  // }
+
+  fn set_open(is_open: bool, thing: Arc<RwLock<Box<dyn webthing::Thing>>>) {
+    let value = json!(is_open);
+    let message = match is_open {
+      true => "Garage door opened",
+      false => "Garage door closed",
+    };
+
+    {
+      let mut thing = thing.write().unwrap();
+      let prop = thing.find_property("open".to_owned()).unwrap();
+      prop.set_value(value.clone());
+    }
+    thing.write().unwrap().property_notify("open".to_owned(), value);
+    thing.write().unwrap().add_event(Box::new(GarageDoorEvent::new(Some(json!(message)))));
   }
 
   fn make_thing(garage_door: Arc<Mutex<GarageDoor>>) -> Arc<RwLock<Box<dyn webthing::Thing + 'static>>> {
@@ -102,7 +119,7 @@ impl IotThing {
       "@type": "OpenProperty",
       "title": "Open",
       "type": "boolean",
-      "description": "Whether the garage door is open"
+      "description": "Whether the garage door is open",
     });
     let is_open = garage_door.lock().unwrap().is_open();
     let on_description = on_description.as_object().unwrap().clone();
@@ -112,6 +129,21 @@ impl IotThing {
       None,
       Some(on_description),
     )));
+
+    let garage_door_event_description = json!({
+      "description": "The garage opened or closed",
+      "type": "string",
+    });
+    let garage_door_event_description = garage_door_event_description.as_object().unwrap().clone();
+    thing.add_available_event("garage_door_event".to_owned(), garage_door_event_description);
+
+    let close_metadata = json!({
+        "title": "Close",
+        "description": "Close the garage door",
+    });
+    let close_metadata = close_metadata.as_object().unwrap().clone();
+    thing.add_available_action("close".to_owned(), close_metadata);
+
     Arc::new(RwLock::new(Box::new(thing)))
   }
 

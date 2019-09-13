@@ -15,9 +15,6 @@ use slacker::Slacker;
 
 pub struct GarageDoor {
   sensor_gpio: usize,
-  opener_gpio: usize,
-  open_led_gpio: usize,
-  closed_led_gpio: usize,
   async_pin_pollers: Vec<sysfs_gpio::AsyncPinPoller>,
   opener: sysfs_gpio::Pin,
   open_led: Arc<sysfs_gpio::Pin>,
@@ -57,9 +54,6 @@ impl GarageDoor {
     let bus = Arc::new(Mutex::new(bus));
     let mut garage_door = GarageDoor {
       sensor_gpio: sensor_gpio,
-      opener_gpio: opener_gpio,
-      open_led_gpio: open_led_gpio,
-      closed_led_gpio: closed_led_gpio,
       opener: opener,
       open_led: open_led,
       closed_led: closed_led,
@@ -95,6 +89,7 @@ impl GarageDoor {
       let is_open = is_open.clone();
       info!(logger, "Setting up sensor gpio"; "sensor_gpio" => sensor_gpio);
       let sensor_pin = GpioUtil::setup_input_pin(sensor_gpio, sysfs_gpio::Edge::BothEdges);
+      let bus2 = bus.clone();
       handle.spawn(sensor_pin.get_value_stream()
         .expect("Expected to get sensor pin value stream.")
         .for_each(move |raw_sensor_value| {
@@ -107,13 +102,13 @@ impl GarageDoor {
             match sensor_value {
               true => {
                 slacker.lock().unwrap().send_text("Garage door opened", logger.clone());
-                bus.lock().unwrap().broadcast("opened".to_string());
+                bus2.lock().unwrap().broadcast("opened".to_string());
                 open_led.set_value(1).unwrap();
                 closed_led.set_value(0).unwrap();
               },
               false => {
                 slacker.lock().unwrap().send_text("Garage door closed", logger.clone());
-                bus.lock().unwrap().broadcast("closed".to_string());
+                bus2.lock().unwrap().broadcast("closed".to_string());
                 open_led.set_value(0).unwrap();
                 closed_led.set_value(1).unwrap();
               }
